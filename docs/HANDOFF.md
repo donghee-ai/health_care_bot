@@ -76,12 +76,36 @@ $APP = "/home/arduino/health_care_bot"
 & $ADB shell "cd $APP; md5sum src/*.py"   # push 로그 믿지 말고 해시 대조
 ```
 
-**디바이스에서 실행:**
+### 실행 전에 미리 알아둬야 하는 것 (매번 확인)
+
+**디바이스 노드 번호는 고정이 아니다.** USB를 어느 포트에 꽂았는지, 어떤 순서로
+꽂았는지, 부팅 시점에 무엇이 연결돼 있었는지에 따라 매번 바뀐다. 문서에 적힌
+번호를 그대로 쓰지 말고 **실행 직전에 아래 두 줄로 확인할 것.**
+
+```bash
+v4l2-ctl --list-devices          # 카메라 노드
+ls /dev/ttyACM* /dev/ttyUSB*     # 서보 어댑터 노드 (양쪽 다 볼 것)
+```
+
+**카메라** — Venus 코덱(디코더/인코더)과 USB 카메라가 `/dev/video*`를 나눠 갖는데
+**순서가 부팅마다 뒤바뀐다.** `v4l2-ctl --list-devices` 출력에서
+`USB ... Camera`로 표시된 쪽이 진짜 카메라다. `Qualcomm Venus`로 표시된 노드를
+지정하면 컨테이너가 카메라를 못 열고 즉시 종료된다.
+
+| 관측 시점 | USB 카메라 | Venus 코덱 |
+|---|---|---|
+| 2026-07-11 | (연결 없음) | video0·1 |
+| 2026-07-19 | **video0·1** | video2·3 |
+
+**서보 어댑터(CH343)** — 커널/드라이버에 따라 `ttyACM`으로도 `ttyUSB`로도 잡힌다.
+UNO Q는 CDC-ACM이라 **`/dev/ttyACM0`**. `run.sh`가 미지정 시 자동 탐색하지만,
+못 찾으면 PTZ가 disabled로 실행되므로 기동 로그의 경고를 확인할 것.
+
+**실행:**
 
 ```bash
 cd /home/arduino/health_care_bot
-v4l2-ctl --list-devices          # 진짜 카메라 노드 확인 (Venus가 0,1 선점)
-CAMERA_DEV=/dev/video2 bash docker/run.sh
+CAMERA_DEV=/dev/video0 bash docker/run.sh      # 위에서 확인한 노드 번호로
 ```
 
 ---
@@ -104,6 +128,10 @@ CAMERA_DEV=/dev/video2 bash docker/run.sh
 py -3.14 scripts/calibrate_st3215.py --port COM9 calibrate   # 지금 자세를 중앙으로 재정의(서보 안 움직임)
 py -3.14 scripts/calibrate_st3215.py --port COM9 stop        # 긴급정지(torque OFF)
 ```
+
+> **분해했다 다시 조립한 경우**는 위 표의 값(중앙/방향/ID/가동범위)이 전부
+> 틀어질 수 있다. 순서까지 정리된 절차는
+> [`reassembly_checklist.md`](reassembly_checklist.md) 참조.
 
 ---
 
@@ -139,10 +167,14 @@ py -3.14 scripts/calibrate_st3215.py --port COM9 stop        # 긴급정지(torq
 **무릎 각도는 hip·knee·ankle 3점이 모두 보여야 계산된다** → 발목까지 프레임에
 들어오는 거리에서 테스트해야 카운팅이 동작한다.
 
-### 5-2. UNO Q 실기 배포
-`docker/run.sh`의 `SERIAL_DEV`는 이제 `/dev/ttyUSB0`(서보 버스 어댑터) 기본값.
-실기에서 `ls /dev/ttyUSB*`로 실제 노드 확인 후 지정. 카메라는 Venus 코덱이
-`/dev/video0·1`을 선점하므로 보통 `/dev/video2` 이상.
+### 5-2. UNO Q 실기 — 코드 배포는 완료, 실측이 남음
+2026-07-19에 코드 동기화 + 카메라/서보 연결 + 기동까지 확인됨
+([`history/2026-07-19_01`](history/2026-07-19_01_device_code_deploy_synced.md)).
+남은 것은 스쿼트 카운팅 실측(5-1)과 복구 사다리 체감 확인.
+
+**실행 전 노드 확인은 §2 "실행 전에 미리 알아둬야 하는 것" 참조.** 노드 번호는
+부팅마다 바뀌므로 문서에 적힌 번호를 그대로 쓰면 안 된다.
+상세: [`issues/2026-07-19_01`](issues/2026-07-19_01_device_node_names_are_not_stable.md)
 
 ### 5-3. (보류 중) MCU 듀얼브레인 트랙
 UNO Q는 듀얼브레인인데 현재 MCU를 런타임에 전혀 안 쓴다. 리서치 결론:
