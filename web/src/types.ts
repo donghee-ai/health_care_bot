@@ -72,6 +72,8 @@ export interface Stats {
   dropped_frames: number
   rss_mb: number
   cpu_temp_c: number | null
+  /** 시스템 전체 CPU 사용률 0~100. 첫 표본에서는 null (차분 계산이라 직전 값 필요) */
+  cpu_percent: number | null
   frame_ts_ms: number
   app: {
     session: SessionSnapshot

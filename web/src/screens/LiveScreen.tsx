@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Info, MapPin, MemoryStick, Thermometer, Timer, Zap } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Cpu, Info, MapPin, MemoryStick, Thermometer, Timer, Zap } from 'lucide-react'
 import { LiveCamera } from '../components/LiveCamera'
 import type { ConnectionState } from '../hooks/useStats'
 import type { Stats } from '../types'
@@ -76,6 +76,32 @@ export function LiveScreen({ stats, connection }: { stats: Stats | null; connect
             <MemoryStick size={14} />
             <span>{stats ? stats.rss_mb.toFixed(0) : '—'}</span>
             <small>MB RAM</small>
+          </div>
+          {/* CPU 사용률 - 100% 기준 게이지. 숫자만으로는 여유가 얼마나 남았는지
+              가늠이 안 되므로 채움 막대를 같이 둔다. 첫 표본은 null(차분 계산). */}
+          <div className="hcb-card hcb-live__cpu">
+            <Cpu size={14} />
+            <span>{stats?.cpu_percent != null ? stats.cpu_percent.toFixed(0) : '—'}</span>
+            <small>% CPU</small>
+            <div
+              className="hcb-live__cpu-track"
+              role="meter"
+              aria-label="CPU 사용률"
+              aria-valuenow={stats?.cpu_percent ?? undefined}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="hcb-live__cpu-fill"
+                data-level={
+                  stats?.cpu_percent == null ? 'idle'
+                    : stats.cpu_percent >= 90 ? 'danger'
+                      : stats.cpu_percent >= 70 ? 'warning'
+                        : 'ok'
+                }
+                style={{ width: `${Math.max(0, Math.min(100, stats?.cpu_percent ?? 0))}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>

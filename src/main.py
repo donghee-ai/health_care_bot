@@ -65,6 +65,39 @@ def get_cpu_temp_c():
         return None
 
 
+_prev_cpu_sample = None
+
+
+def get_cpu_percent():
+    """시스템 전체 CPU 사용률 0~100 (전 코어 합산을 100%로 정규화).
+
+    /proc/stat은 부팅 이후 누적 시간이라 값 하나로는 사용률을 알 수 없다.
+    직전 호출과의 차분으로 구간 사용률을 낸다 → **첫 호출은 항상 None**.
+    (컨테이너 안에서도 /proc/stat은 호스트 전체 값을 보여주므로 디바이스
+    전체 부하가 잡힌다. 이 프로세스만의 사용률이 아니다.)
+    """
+    global _prev_cpu_sample
+    try:
+        with open('/proc/stat') as f:
+            parts = f.readline().split()
+        if not parts or parts[0] != 'cpu':
+            return None
+        vals = [int(v) for v in parts[1:]]
+    except Exception:
+        return None
+    if len(vals) < 4:
+        return None
+    idle = vals[3] + (vals[4] if len(vals) > 4 else 0)   # idle + iowait
+    total = sum(vals)
+    prev, _prev_cpu_sample = _prev_cpu_sample, (total, idle)
+    if prev is None:
+        return None
+    d_total, d_idle = total - prev[0], idle - prev[1]
+    if d_total <= 0:
+        return None
+    return max(0.0, min(100.0, (d_total - d_idle) / d_total * 100.0))
+
+
 class FrameGrabber:
     """카메라를 별도 스레드에서 계속 읽어 항상 최신 프레임 1장만 보관.
 
@@ -392,6 +425,7 @@ def main():
                     "dropped_frames": grabber.dropped,
                     "rss_mb": round(get_rss_mb() or 0.0, 1),
                     "cpu_temp_c": round(cpu_temp_c, 1) if (cpu_temp_c := get_cpu_temp_c()) is not None else None,
+                    "cpu_percent": round(cpu_pct, 1) if (cpu_pct := get_cpu_percent()) is not None else None,
                 }
                 if rep_event:
                     live["last_event"] = {
