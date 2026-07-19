@@ -1,0 +1,15 @@
+# health_care_bot — runtime 의존성 (의도 표현)
+# 디바이스 venv-unoq 와 호환 (numpy/opencv/ai-edge-litert 핀 일치)
+
+# Core scientific
+numpy>=1.26,<3
+
+# Vision (카메라 + 이미지 입출력 + draw)
+opencv-python>=4.10
+pillow>=10
+
+# TFLite runtime — MoveNet Thunder INT8 직접 추론
+ai-edge-litert>=2.1
+
+# Arduino 시리얼 통신 — PTZ 명령 송신
+pyserial>=3.5

@@ -1,0 +1,27 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+# dist는 커밋하지 않는다 - clone 후 `cd web && npm install && npm run build`로
+# 재생성한다 (package-lock.json이 버전을 고정). 빌드마다 해시 파일명이 바뀌어
+# 커밋에 노이즈가 쌓이는 것을 피하기 위함.
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
