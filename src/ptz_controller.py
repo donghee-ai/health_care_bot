@@ -90,10 +90,20 @@ class PTZController:
     # 카메라가 안 움직이던 중이면 속도가 0이라 관성이 아예 안 걸린다 —
     # 검출만 깜빡인 경우의 헛발질이 이 규칙으로 자연히 걸러진다.
     coast_start_misses: int = 3          # 단발 깜빡임 무시 - 연속 N프레임부터 관성
-    coast_frames: int = 10               # 관성 지속 프레임 수
-    coast_decay: float = 0.8             # 프레임당 속도 감쇠 (총 회전량 26도 -> 12도)
+    # 관성 지속 "프레임 수" — 시간이 아니라 프레임이므로 FPS가 다르면 지속 시간과
+    # 이동 거리가 달라진다 (11 FPS에서 15프레임 = 1.36초, 29 FPS면 0.52초).
+    # 알려진 한계로 남겨둔 부분. 상세: docs/history/2026-07-19_02
+    coast_frames: int = 15               # 11 FPS 기준 약 1.36초
+    # 프레임당 속도 감쇠. 1.0이면 감쇠 없이 등속으로 끝까지 돌다 딱 멈춘다.
+    # 관성 이동 "거리"를 결정하는 지배적 인자 (coast_frames는 거의 영향 없음):
+    #   0.8 -> 27도, 0.9 -> 44도, 1.0 -> 84도  (15프레임, 11 FPS 기준)
+    coast_decay: float = 0.9
     coast_hold_s: float = 1.0            # 관성 끝 지점에서 대기
     return_hold_s: float = 2.0           # 관성 이전 위치에서 대기
+    # 화면 내 이동량(정규화 0~1)을 각도로 환산하는 계수 = 카메라 수평 화각.
+    # 정확한 값을 모르면 대략 60도로 두고 실측으로 보정한다 (카메라를 알려진
+    # 각도만큼 돌려놓고 피사체가 화면에서 몇 % 밀리는지 재면 나온다).
+    coast_fov_deg: float = 60.0
     # 서보(50 deg/s)가 목표각이 미는 속도(최대 29 deg/s)보다 1.7배 빠르다.
     # 250ms 주기로 던지면 서보가 먼저 도착해 주기의 40~70%를 멈춰 있어서
     # "톡톡" 끊겨 보인다. 프레임 간격(11 FPS = 91ms)보다 짧게 줘서 사실상
@@ -107,6 +117,8 @@ class PTZController:
     _last_cmd_ms: float = field(default=0.0, init=False)
     _last_update_ms: Optional[float] = field(default=None, init=False)
     _last_yaw_vel: float = field(default=0.0, init=False)      # 마지막 yaw 각속도 (deg/s, 부호 포함)
+    _prev_smooth_x: Optional[float] = field(default=None, init=False)
+    _last_subject_vel: float = field(default=0.0, init=False)  # 화면 내 피사체 속도 (정규화 x/초)
     _recover_stage: str = field(default="none", init=False)    # none|coast|hold|returned|centered
     _coast_vel: float = field(default=0.0, init=False)
     _coast_left: int = field(default=0, init=False)
@@ -269,8 +281,15 @@ class PTZController:
 
         if self._recover_stage == "none":
             self._pre_coast_pan = self.pan_deg
-            self._coast_vel = self._last_yaw_vel
-            self._coast_left = self.coast_frames if abs(self._coast_vel) > 1e-6 else 0
+            # 사람의 실제 각속도 = 카메라가 이미 돌던 속도 + 화면에 남은 이동량.
+            # 둘 중 하나만 보면 놓친다: 중앙에서 빠르게 이탈하면 카메라는 안
+            # 움직였고(전자 0), 카메라가 잘 따라가던 중이면 화면 속 사람은
+            # 거의 정지해 보인다(후자 0). 제자리 손실은 둘 다 0이라 관성이
+            # 안 걸리고, 이게 헛발질을 막는 성질이다.
+            self._coast_vel = self._clamp(
+                self._last_yaw_vel + self.yaw_sign * self._last_subject_vel * self.coast_fov_deg,
+                -self.max_deg_per_s, self.max_deg_per_s)
+            self._coast_left = self.coast_frames if abs(self._coast_vel) > 1.0 else 0
             # 정지 중 손실(각속도 0)이면 관성을 건너뛰고 바로 대기 단계로
             self._recover_stage = "coast" if self._coast_left > 0 else "hold"
             self._stage_since_ms = now_ms
@@ -327,6 +346,7 @@ class PTZController:
             if self.enabled and self.auto_track_enabled:
                 return self._recover_yaw(now_ms, dt_s)
             return None
+        had_misses = self._miss_frames > 0
         self._miss_frames = 0
         self._reset_recovery()           # 재검출 - 복구 사다리 즉시 취소
 
@@ -334,6 +354,17 @@ class PTZController:
         a = self.smooth_alpha
         self._smooth_x = tx if self._smooth_x is None else a * tx + (1 - a) * self._smooth_x
         self._smooth_y = ty if self._smooth_y is None else a * ty + (1 - a) * self._smooth_y
+
+        # 화면 내 피사체 속도 (정규화 x/초). 관성이 "카메라가 얼마나 돌고
+        # 있었나"가 아니라 "사람이 얼마나 빨리 움직였나"를 근거로 삼기 위함.
+        # 손실 구간을 건너뛴 델타는 시간 간격이 불확실해 신뢰할 수 없으므로 버린다.
+        if had_misses:
+            self._prev_smooth_x = None
+        if self._prev_smooth_x is not None and dt_s > 1e-6:
+            self._last_subject_vel = (self._smooth_x - self._prev_smooth_x) / dt_s
+        else:
+            self._last_subject_vel = 0.0
+        self._prev_smooth_x = self._smooth_x
         ex = self._smooth_x - 0.5
         ey = self._smooth_y - self.pitch_target_y
 
