@@ -22,10 +22,10 @@ import cv2
 # 같은 폴더 모듈
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pose_utils import KP, letterbox_square, unletterbox_kp, person_center_normalized, person_center_weighted, draw_pose
-from angles import knee_angle, elbow_angle, pick_angle, body_orientation
-from exercise_counter import SquatCounter, PushupCounter
+from angles import knee_angle, shoulder_elev_angle, pick_angle, body_orientation
+from exercise_counter import SquatCounter, OverheadPressCounter, LateralRaiseCounter
 from ptz_controller import PTZController
-from http_server import update_live_state, start_server, init_app
+from http_server import update_live_state, start_server, init_app, viewer_count
 import app_state
 
 try:
@@ -42,7 +42,7 @@ except ImportError:
 
 # === 자세별 좌/우 keypoint 강조 인덱스 (draw용) ===
 _HIGHLIGHT_SQUAT = [KP["left_knee"], KP["right_knee"]]
-_HIGHLIGHT_PUSHUP = [KP["left_elbow"], KP["right_elbow"]]
+_HIGHLIGHT_ARM = [KP["left_elbow"], KP["right_elbow"], KP["left_wrist"], KP["right_wrist"]]
 
 
 def get_rss_mb():
@@ -150,8 +150,8 @@ class FrameGrabber:
 def parse_args():
     ap = argparse.ArgumentParser(description="UNO Q Health Care Bot")
     ap.add_argument("model", help="MoveNet Thunder INT8 TFLite 경로")
-    ap.add_argument("--mode", choices=["squat", "pushup", "auto"], default="auto",
-                    help="운동 종목 (auto: 자세 자동 분류)")
+    ap.add_argument("--mode", choices=["squat", "overhead", "lateral"], default="squat",
+                    help="운동 종목 (웹 UI에서 /api/mode로 실시간 변경). 정면 선택식 - 자동분류 없음")
     ap.add_argument("--camera", type=int, default=0)
     ap.add_argument("--width", type=int, default=640)
     ap.add_argument("--height", type=int, default=480)
@@ -166,8 +166,10 @@ def parse_args():
     # 임계 (squat/pushup별 default가 다르지만 같은 플래그로 노출)
     ap.add_argument("--squat-down-th", type=float, default=100.0)
     ap.add_argument("--squat-up-th", type=float, default=140.0)
-    ap.add_argument("--pushup-down-th", type=float, default=90.0)
-    ap.add_argument("--pushup-up-th", type=float, default=160.0)
+    ap.add_argument("--overhead-down-th", type=float, default=60.0)
+    ap.add_argument("--overhead-up-th", type=float, default=140.0)
+    ap.add_argument("--lateral-down-th", type=float, default=35.0)
+    ap.add_argument("--lateral-up-th", type=float, default=80.0)
     ap.add_argument("--min-dwell-ms", type=float, default=200.0)
 
     # PTZ (ST3215 시리얼 버스 서보 직결 - MCU 경유 아님)
@@ -194,20 +196,19 @@ def parse_args():
     ap.add_argument("--serve", type=int, default=0,
                     help="HTTP MJPEG 포트 (0 = 비활성)")
     ap.add_argument("--jpeg-quality", type=int, default=70)
+    ap.add_argument("--idle-skip-draw", action="store_true",
+                    help="스트림 뷰어가 0명이면 그리기+인코딩을 건너뛴다(연산 집중 모드). "
+                         "미지정 시 기존과 동일하게 항상 그린다.")
     return ap.parse_args()
 
 
-def select_counter(mode: str, orient: str | None, squat_c, pushup_c):
-    """auto 모드에서 자세 분류 결과로 카운터 선택. squat/pushup 고정 시 해당 카운터."""
-    if mode == "squat":
-        return squat_c, "squat"
-    if mode == "pushup":
-        return pushup_c, "pushup"
-    if orient == "horizontal":
-        return pushup_c, "pushup"
-    if orient == "vertical":
-        return squat_c, "squat"
-    return None, "unknown"
+def select_counter(mode: str, squat_c, overhead_c, lateral_c):
+    """모드(웹 UI에서 선택)로 카운터를 고른다. 전부 정면 종목이라 자동분류 없음."""
+    if mode == "overhead":
+        return overhead_c, "overhead"
+    if mode == "lateral":
+        return lateral_c, "lateral"
+    return squat_c, "squat"
 
 
 def compute_angle(kp, exercise: str, conf_th: float, side: str):
@@ -215,9 +216,9 @@ def compute_angle(kp, exercise: str, conf_th: float, side: str):
     if exercise == "squat":
         left = knee_angle(kp, "left", conf_th)
         right = knee_angle(kp, "right", conf_th)
-    elif exercise == "pushup":
-        left = elbow_angle(kp, "left", conf_th)
-        right = elbow_angle(kp, "right", conf_th)
+    elif exercise in ("overhead", "lateral"):
+        left = shoulder_elev_angle(kp, "left", conf_th)
+        right = shoulder_elev_angle(kp, "right", conf_th)
     else:
         return None, None, None
     return left, right, pick_angle(left, right, mode=side)
@@ -244,7 +245,8 @@ def main():
     print(f"  camera   : /dev/video{args.camera} {args.width}x{args.height}")
     print(f"  threads  : {args.threads}, conf {args.conf}, side {args.side}")
     print(f"  squat    : down<{args.squat_down_th}, up>{args.squat_up_th}")
-    print(f"  pushup   : down<{args.pushup_down_th}, up>{args.pushup_up_th}")
+    print(f"  overhead : down<{args.overhead_down_th}, up>{args.overhead_up_th}")
+    print(f"  lateral  : down<{args.lateral_down_th}, up>{args.lateral_up_th}")
     print(f"  ptz      : serial={args.serial or '(disabled)'} sector={args.sector_side:.3f} "
           f"lock={args.lock_frames}f grace={args.frame_out_grace}f scale={args.track_scale}")
     if args.serve:
@@ -269,16 +271,17 @@ def main():
     )
     ptz.open()
 
-    # Counters - 항상 둘 다 생성 (mode auto에서 양쪽 모두 사용)
+    # Counters - 세 종목 모두 생성 (웹에서 모드 전환 시 각 상태 유지)
     squat_c = SquatCounter(args.squat_down_th, args.squat_up_th, args.min_dwell_ms)
-    pushup_c = PushupCounter(args.pushup_down_th, args.pushup_up_th, args.min_dwell_ms)
+    overhead_c = OverheadPressCounter(args.overhead_down_th, args.overhead_up_th, args.min_dwell_ms)
+    lateral_c = LateralRaiseCounter(args.lateral_down_th, args.lateral_up_th, args.min_dwell_ms)
 
     _last_fps = {"value": 0.0}
     app_state.set_mode(args.mode)
 
     # HTTP
     if args.serve:
-        init_app(ptz=ptz, squat_c=squat_c, pushup_c=pushup_c,
+        init_app(ptz=ptz, squat_c=squat_c, overhead_c=overhead_c, lateral_c=lateral_c,
                  avg_fps_fn=lambda: _last_fps["value"])
         try:
             start_server(args.serve)
@@ -335,7 +338,7 @@ def main():
             if orient is not None:
                 last_orient = orient
             live_mode = app_state.get_mode() if args.serve else args.mode
-            counter, exercise = select_counter(live_mode, last_orient, squat_c, pushup_c)
+            counter, exercise = select_counter(live_mode, squat_c, overhead_c, lateral_c)
 
             # 통계/오버레이용 사람 중심점 (PTZ 추적점과는 별개)
             if exercise == "squat":
@@ -343,7 +346,9 @@ def main():
             else:
                 x_norm, y_norm = person_center_normalized(kp, actual_h, actual_w, args.conf)
 
-            # PTZ 추적 - 컨트롤러가 keypoint에서 목표점(무릎중점→엉덩이→몸통)을 직접 산출
+            # PTZ 추적 - 종목별 타깃/프레이밍: 스쿼트=하체(무릎), 상체운동=상체(어깨,
+            # 머리 위 팔이 안 잘리게). 컨트롤러가 keypoint에서 목표점을 직접 산출.
+            ptz.set_track_mode(exercise)
             now_ms = time.perf_counter() * 1000.0
             ptz_cmd = ptz.update(kp, actual_h, actual_w, now_ms)
 
@@ -353,50 +358,32 @@ def main():
                 left, right, chosen = compute_angle(kp, exercise, args.conf, args.side)
                 rep_event = counter.update(chosen, now_ms=now_ms)
 
-            # === Draw overlay ===
-            annotated = frame.copy()
-            highlight = _HIGHLIGHT_PUSHUP if exercise == "pushup" else _HIGHLIGHT_SQUAT
-            draw_pose(annotated, kp, conf_th=args.conf, highlight=highlight)
+            # === Draw overlay: 스켈레톤(pose)만 ===
+            # 수치 텍스트(FPS/각도/REPS/PTZ)는 웹 UI가 stats.json으로 표시하므로
+            # 영상에 굽지 않는다 — 중복 제거 + putText 비용 절감. 골격은 유지.
+            #
+            # --idle-skip-draw(연산 집중 모드): 스트림 뷰어가 0명이면 그리기+
+            # 인코딩을 통째로 건너뛴다. 플래그가 없으면(기본) 항상 그려서
+            # 기존 동작과 100% 동일하다. stats.json 숫자는 어느 경우든 계속 흐른다.
+            want_video = True
+            if args.serve and args.idle_skip_draw:
+                want_video = viewer_count() > 0
+            if want_video:
+                annotated = frame.copy()
+                highlight = _HIGHLIGHT_ARM if exercise in ("overhead", "lateral") else _HIGHLIGHT_SQUAT
+                draw_pose(annotated, kp, conf_th=args.conf, highlight=highlight)
+            else:
+                annotated = None
 
-            # FPS
+            # FPS 계산 (영상 오버레이는 없앴지만 stats.json/로그에 여전히 필요)
             ms_loop = (time.perf_counter() - t0) * 1000.0
             loop_window.append(ms_loop)
             avg_ms = sum(loop_window) / len(loop_window)
             fps = 1000.0 / avg_ms if avg_ms > 0 else 0.0
             _last_fps["value"] = round(fps, 2)
 
-            cv2.putText(annotated, f"FPS {fps:.1f}  ({avg_ms:.0f}ms)",
-                        (10, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
-
-            # 좌하단 각도
-            y_text = actual_h - 50
-            label = "knee" if exercise == "squat" else ("elbow" if exercise == "pushup" else "?")
-            for side_l, ang in (("L", left), ("R", right)):
-                txt = f"{side_l} {label}: " + (f"{ang:.0f}°" if ang is not None else "?")
-                cv2.putText(annotated, txt, (10, y_text),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2, cv2.LINE_AA)
-                y_text += 28
-
-            # 우상단 REPS + 운동 종목
-            if counter is not None:
-                color = (0, 255, 255) if rep_event else (220, 220, 220)
-                cv2.putText(annotated, f"{exercise.upper()}  REPS {counter.reps}  [{counter.state}]",
-                            (actual_w - 360, 36), cv2.FONT_HERSHEY_SIMPLEX, 0.85, color, 2, cv2.LINE_AA)
-            else:
-                cv2.putText(annotated, "NO POSE",
-                            (actual_w - 200, 36), cv2.FONT_HERSHEY_SIMPLEX, 0.85,
-                            (100, 100, 100), 2, cv2.LINE_AA)
-
-            # 우하단 PTZ 상태
+            # PTZ 스냅샷 (stats.json + 아래 print/로그에서 사용)
             ptz_snap = ptz.snapshot()
-            ptz_color = {
-                "in_frame": (180, 180, 180),
-                "edge": (0, 200, 255),
-                "lost": (0, 0, 255),
-            }.get(ptz_snap["state"], (180, 180, 180))
-            cv2.putText(annotated, f"PTZ {ptz_snap['state']}",
-                        (actual_w - 200, actual_h - 16), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
-                        ptz_color, 2, cv2.LINE_AA)
 
             frame_idx += 1
 
@@ -419,7 +406,8 @@ def main():
                         round(y_norm, 3) if y_norm is not None else None,
                     ],
                     "squat": squat_c.snapshot(),
-                    "pushup": pushup_c.snapshot(),
+                    "overhead": overhead_c.snapshot(),
+                    "lateral": lateral_c.snapshot(),
                     "ptz": ptz_snap,
                     "last_ptz_cmd": ptz_cmd,
                     "dropped_frames": grabber.dropped,
@@ -435,7 +423,7 @@ def main():
                         "min_angle_deg": round(rep_event[2], 1),
                         "frame": frame_idx,
                     }
-                update_live_state(annotated, live, q=args.jpeg_quality)
+                update_live_state(annotated, live, q=args.jpeg_quality, encode=want_video)
 
             if rep_event:
                 print(f"  ★ {exercise.upper()} REP #{rep_event[1]}  "
@@ -470,7 +458,8 @@ def main():
         print(f"     fps_effective : {frame_idx / max(elapsed, 1e-9):.2f}")
         print(f"     dropped       : {grabber.dropped}")
         print(f"     squat reps    : {squat_c.reps}")
-        print(f"     pushup reps   : {pushup_c.reps}")
+        print(f"     overhead reps : {overhead_c.reps}")
+        print(f"     lateral reps  : {lateral_c.reps}")
         print(f"     ptz cmds      : pan={ptz.n_pan_cmds} tilt={ptz.n_tilt_cmds}")
         print("=" * 64)
 

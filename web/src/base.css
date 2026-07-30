@@ -1,0 +1,127 @@
+@import './fonts.css';
+
+/* 시안 네 개가 공유하는 최소한의 바닥.
+   색·타이포·간격은 여기서 정하지 않는다 — 그건 각 시안의 몫이다.
+   여기 있는 건 "어느 시안이든 깨지면 안 되는 것"뿐. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-synthesis-weight: none;
+  overscroll-behavior-y: none;
+
+  /* 한글 줄바꿈. 한글 음절은 유니코드상 '표의문자(ID)'로 분류돼서,
+     기본값이면 브라우저가 아무 음절 사이에서나 줄을 끊는다
+     ("한국어를" → "한국 / 어를"). 한국어는 중국어·일본어와 달리
+     어절 사이를 띄우므로 이 기본 동작은 그냥 틀린 것에 가깝다.
+     라틴 문자 동작은 안 바뀌므로 전역으로 걸어도 안전하다. */
+  word-break: keep-all;
+  /* keep-all만 걸면 긴 URL이나 토큰이 넘칠 수 있어 같이 둔다 */
+  overflow-wrap: break-word;
+}
+
+/* keep-all은 min-content 폭을 "가장 긴 어절"로 밀어올린다.
+   좁은 flex/grid 칸에서는 그게 그대로 넘침이 되므로 풀어준다.
+   (break-word가 아니라 anywhere여야 min-content가 실제로 줄어든다) */
+.hcb-flex-min {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+h1, h2, h3, h4, h5, h6, p, figure, blockquote {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  /* 모바일에서 탭할 때 뜨는 회색 하이라이트는 어느 시안에서도 원치 않는다 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+input {
+  font: inherit;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 키보드 사용자에게는 초점을 확실히 보이게, 마우스 클릭엔 안 보이게 */
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.hcb-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hcb-noscroll::-webkit-scrollbar {
+  display: none;
+}
+.hcb-noscroll {
+  scrollbar-width: none;
+}
+
+/* 실시간으로 바뀌는 숫자는 전부 tabular. 안 그러면 10↔11에서
+   글자폭이 달라져 레이아웃이 미세하게 흔들린다.
+
+   font-feature-settings가 아니라 font-variant-numeric을 쓴다 —
+   전자는 나열하지 않은 기능(calt/kern 등)을 전부 꺼버려서, tnum 하나
+   켜자고 커닝을 잃는다. */
+.hcb-tnum {
+  font-variant-numeric: tabular-nums;
+  /* 일부 서체는 고정폭 숫자에까지 커닝 페어를 걸어둬서, tabular인데도
+     "11111"과 "00000"의 폭이 달라진다. 커닝을 꺼야 실제로 안 흔들린다. */
+  font-kerning: none;
+  /* font-feature-settings는 font-variant-numeric보다 우선순위가 높아서,
+     어딘가에서 한 줄 선언되면 tabular이 조용히 무력화된다. 방어적으로 비운다. */
+  font-feature-settings: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

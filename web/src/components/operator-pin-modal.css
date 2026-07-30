@@ -1,0 +1,101 @@
+.opm {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(8, 18, 14, .56);
+  backdrop-filter: blur(12px);
+}
+
+.opm__box {
+  width: min(100%, 420px);
+  padding: 28px;
+  border: 1px solid rgba(20, 45, 36, .12);
+  border-radius: 24px;
+  color: #163329;
+  background: #fbfaf6;
+  box-shadow: 0 26px 80px rgba(7, 26, 19, .24);
+}
+
+.opm--dark .opm__box {
+  color: #f6f8f6;
+  background: #171b18;
+  border-color: rgba(255, 255, 255, .12);
+}
+
+.opm__eyebrow {
+  color: #e26e3e;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.opm__title {
+  margin-top: 8px;
+  font-size: 23px;
+  font-weight: 750;
+  line-height: 1.28;
+  letter-spacing: -.035em;
+}
+
+.opm__copy {
+  margin-top: 9px;
+  color: #66736d;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.opm--dark .opm__copy { color: #9aa59e; }
+
+.opm__input {
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px 16px;
+  border: 1px solid rgba(20, 45, 36, .18);
+  border-radius: 14px;
+  color: inherit;
+  background: rgba(255, 255, 255, .8);
+  font-size: 18px;
+}
+
+.opm--dark .opm__input {
+  background: #0e110f;
+  border-color: rgba(255, 255, 255, .16);
+}
+
+.opm__error {
+  margin-top: 8px;
+  color: #c34836;
+  font-size: 13px;
+}
+
+.opm__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.opm__button {
+  min-height: 46px;
+  border-radius: 13px;
+  background: rgba(20, 45, 36, .08);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.opm--dark .opm__button { background: rgba(255, 255, 255, .08); }
+
+.opm__button--primary {
+  color: white;
+  background: #135842;
+}
+
+.opm--dark .opm__button--primary {
+  color: #10130f;
+  background: #b9ff35;
+}
+
+.opm__button:disabled { opacity: .45; cursor: not-allowed; }

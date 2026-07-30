@@ -39,7 +39,17 @@ IMAGE_TAG="22.04"
 IMAGE_FULL="${IMAGE_NAME}:${IMAGE_TAG}"
 CONTAINER_NAME="health-care-bot"
 
-CAMERA_DEV="${CAMERA_DEV:-/dev/video0}"
+# USB 카메라 노드 자동 탐색 - Venus 코덱(qcom-venus-*)을 피하고 이름에 "Camera"가
+# 들어간 v4l2 노드를 고른다. 노드 번호는 부팅마다 바뀌므로 하드코딩하지 않는다.
+# (현재 실기: USB 카메라 = /dev/video2). 미검출 시 /dev/video2 기본값.
+if [ -z "${CAMERA_DEV:-}" ]; then
+    CAMERA_DEV="/dev/video2"
+    for _v in /sys/class/video4linux/video*; do
+        case "$(cat "${_v}/name" 2>/dev/null)" in
+            *[Cc]amera*) CAMERA_DEV="/dev/$(basename "${_v}")"; break ;;
+        esac
+    done
+fi
 CAMERA_INDEX="${CAMERA_INDEX:-${CAMERA_DEV##*video}}"
 # 서보 시리얼 노드 자동 탐색 - 고정 기본값을 두면 노드 이름이 달라졌을 때
 # (ttyUSB <-> ttyACM) PTZ가 그대로 disabled로 떨어진다.
@@ -132,7 +142,7 @@ exec docker run --rm -it \
     "${IMAGE_FULL}" \
     python3 /work/src/main.py \
         /work/models/movenet_thunder_int8.tflite \
-        --mode auto \
+        --mode squat \
         --camera "${CAMERA_INDEX}" \
         "${SERIAL_ARG[@]}" \
         --serve "${HTTP_PORT}"

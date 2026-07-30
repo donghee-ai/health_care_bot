@@ -1,0 +1,371 @@
+/* 이 파일은 scripts/subset_pretendard.py가 생성한다 — 직접 고치지 말 것.
+   Pretendard 2.0MB를 unicode-range로 쪼갠 결과.
+   브라우저는 화면에 실제로 그리는 글자가 든 조각만 내려받는다. */
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/base.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+0020-007E, U+00A0-00FF, U+0100-017F, U+2000-206F, U+20A0-20BF, U+2100-214F, U+2190-21FF, U+2200-22FF, U+2460-24FF, U+25A0-25FF, U+2600-26FF, U+2700-27BF, U+3000-303F, U+1100-11FF, U+3130-318F, U+FF00-FFEF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-core.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+AC00-AC01, U+AC04, U+AC08, U+AC10, U+AC12, U+AC15-AC16, U+AC19, U+AC1C, U+AC20, U+AC31, U+AC70, U+AC74, U+AC77-AC78, U+AC80, U+AC83, U+AC8C, U+ACA8-ACA9, U+ACAC, U+ACB0, U+ACB9, U+ACBC-ACBD, U+ACC4, U+ACE0-ACE1, U+ACE7-ACE8, U+ACF3, U+ACF5, U+ACFC, U+AD00, U+AD04, U+AD11, U+AD18, U+AD1C, U+AD50, U+AD6C-AD6D, U+AD74-AD75, U+AD8C, U+ADDC, U+ADE0, U+ADF8, U+ADFC, U+AE00, U+AE08-AE09, U+AE30, U+AE34, U+AE38, U+AE40, U+AE4A, U+AE4C, U+AE54, U+AE5C-AE5D, U+AE68, U+AEBC, U+AECD, U+AED8, U+AEF4, U+AFC8, U+AFD4, U+B00C, U+B04A, U+B057, U+B05D, U+B07C, U+B08C, U+B098-B099, U+B09C, U+B0A0, U+B0A8, U+B0AB, U+B0AE, U+B0B4, U+B0B8, U+B0C8, U+B0E5, U+B108-B109, U+B10C, U+B110, U+B113, U+B118, U+B123-B124, U+B144, U+B150, U+B178, U+B192-B193, U+B204, U+B208, U+B20C, U+B290, U+B294, U+B298, U+B2A5-B2A6, U+B2C8, U+B2DD, U+B2E4-B2E5, U+B2E8, U+B2EB-B2EC, U+B2F3-B2F4, U+B2F9, U+B300, U+B354, U+B358, U+B35C, U+B36E, U+B370, U+B3C4-B3C5, U+B3CC, U+B3D9, U+B3FC, U+B410, U+B418, U+B41C, U+B420, U+B428-B429, U+B450, U+B454, U+B458, U+B465, U+B46C, U+B4A4, U+B4DC-B4DD, U+B4E0, U+B4E4, U+B4F1, U+B514, U+B518, U+B529, U+B530, U+B54C, U+B5A0, U+B5A4, U+B5A8, U+B69D, U+B728, U+B738, U+B744, U+B77C-B77D, U+B780, U+B78C, U+B790, U+B798-B799, U+B79C, U+B7B5, U+B7C9, U+B7EC, U+B7F0, U+B7FC-B7FD, U+B808, U+B824-B825, U+B838-B839, U+B85C-B85D, U+B864, U+B8CC, U+B8E8, U+B8F0, U+B958, U+B960, U+B974, U+B978, U+B97C, U+B984, U+B98E, U+B9AC-B9AD, U+B9B0, U+B9BC-B9BD, U+B9BF, U+B9C1, U+B9C8-B9C9, U+B9CC, U+B9CE, U+B9D0, U+B9DD-B9DE, U+B9E3, U+B9E8, U+B9F7, U+BA39, U+BA3C, U+BA40, U+BA48, U+BA54, U+BA70, U+BA74, U+BA85, U+BAA8-BAA9, U+BAAB, U+BAB0, U+BAB8, U+BABB, U+BB34, U+BB38, U+BB3C, U+BB49, U+BBC0, U+BBF8, U+BC00, U+BC11, U+BC14, U+BC16, U+BC18, U+BC1B-BC1D, U+BC29, U+BC30-BC31, U+BC38, U+BC49, U+BC84, U+BC88, U+BC8C, U+BC94-BC95, U+BCA8, U+BCBD, U+BCC0, U+BCC4, U+BCCD, U+BCF4-BCF5, U+BCF8, U+BCFC, U+BD07, U+BD80, U+BD84, U+BD88-BD89, U+BD99, U+BDF0, U+BE0C, U+BE14, U+BE44, U+BE48, U+BE4C, U+BE5B, U+BE61, U+BE68, U+BE7C, U+BE8F, U+BF18, U+BFD0, U+C0AC, U+C0B0, U+C0B4, U+C0C1, U+C0C8-C0C9, U+C0DD, U+C0F7, U+C11C-C11E, U+C120, U+C124, U+C131, U+C138, U+C140, U+C14B, U+C158, U+C18C-C18D, U+C190, U+C1A1, U+C1C4, U+C218, U+C21C, U+C228, U+C22B, U+C26C, U+C270, U+C288, U+C2A4, U+C2AC, U+C2B5, U+C2DC-C2DD, U+C2E0, U+C2E4, U+C2F6, U+C2F8, U+C313, U+C4F0, U+C4F4, U+C4F8, U+C529, U+C52C, U+C544, U+C548-C54A, U+C54C, U+C555, U+C558-C559, U+C55E, U+C560, U+C571, U+C57C-C57D, U+C591, U+C595, U+C5B4-C5B5, U+C5B8-C5B9, U+C5BB-C5BC, U+C5C5-C5C8, U+C5D0, U+C5D4, U+C5EC-C5ED, U+C5F0, U+C5F4, U+C5FC, U+C600-C601, U+C605, U+C608, U+C624, U+C628, U+C62C, U+C62E, U+C640, U+C644, U+C654, U+C65C, U+C678, U+C67C, U+C694, U+C6A9, U+C6B0, U+C6B4, U+C6C0, U+C6C3, U+C6CC, U+C6D0, U+C6D4, U+C6E0, U+C6F9, U+C704, U+C715, U+C720, U+C73C, U+C740, U+C744, U+C74C, U+C758, U+C774, U+C778, U+C77C-C77D, U+C783-C785, U+C788-C789, U+C790-C791, U+C798, U+C7A0-C7A1, U+C7A5, U+C7AC, U+C800-C801, U+C804, U+C808, U+C810-C811, U+C815, U+C81C, U+C838, U+C870-C871, U+C874, U+C881, U+C885, U+C88B-C88C, U+C8FC-C8FD, U+C900, U+C904, U+C911, U+C988-C989, U+C99D, U+C9C0-C9C1, U+C9C4, U+C9C8, U+C9D0-C9D1, U+C9DC-C9DD, U+C9E0, U+C9E7, U+C9F0, U+C9F8, U+CA4D, U+CABC-CABD, U+CBE4, U+CC28-CC29, U+CC2E, U+CC3D, U+CC44, U+CC98-CC99, U+CC9C, U+CCAB, U+CCAD, U+CCB4, U+CCD0, U+CCE4, U+CD08-CD09, U+CD18, U+CD2C, U+CD5C, U+CD94-CD95, U+CD98, U+CD9C, U+CDA4, U+CDA9, U+CDB0, U+CDC4, U+CDE8, U+CE20-CE21, U+CE58-CE59, U+CE5C, U+CE60, U+CE68, U+CE74, U+CE78, U+CEE4, U+CEF4, U+CF00, U+CF1C, U+CF30, U+CF54-CF55, U+CFFC, U+D06C, U+D070, U+D074, U+D07C, U+D0A4, U+D0A8, U+D0B7, U+D0B9, U+D0C0-D0C1, U+D0C4, U+D0C8, U+D0DC-D0DD, U+D0E4, U+D0ED, U+D130, U+D134, U+D14C-D14D, U+D154, U+D15C, U+D1A0-D1A1, U+D1B1, U+D1B5, U+D22C, U+D295, U+D2B8, U+D2BC, U+D2C0, U+D2F0, U+D2F4, U+D30C, U+D310, U+D314, U+D328, U+D37C, U+D384, U+D398, U+D3B8, U+D3EC-D3ED, U+D3F0, U+D45C, U+D478, U+D480, U+D488, U+D504, U+D50C, U+D53C-D53D, U+D544, U+D54F, U+D558-D559, U+D55C, U+D560, U+D568-D569, U+D56D, U+D574, U+D588-D589, U+D5A5, U+D5C8, U+D5E4, U+D600, U+D604, U+D615, U+D638, U+D63C, U+D654-D655, U+D658, U+D65C, U+D669, U+D68C-D68D, U+D69F, U+D6C4, U+D6E8, U+D718, U+D749, U+D750, U+D754, U+D758, U+D769, U+D770, U+D788, U+D78C, U+D790;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-00.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+AC02-AC03, U+AC05-AC07, U+AC09-AC0F, U+AC11, U+AC13-AC14, U+AC17-AC18, U+AC1A-AC1B, U+AC1D-AC1F, U+AC21-AC30, U+AC32-AC6F, U+AC71-AC73, U+AC75-AC76, U+AC79-AC7F, U+AC81-AC82, U+AC84-AC8B, U+AC8D-ACA7, U+ACAA-ACAB, U+ACAD-ACAF, U+ACB1-ACB8, U+ACBA-ACBB, U+ACBE-ACC3, U+ACC5-ACDF, U+ACE2-ACE6, U+ACE9-ACF2, U+ACF4, U+ACF6-ACFB, U+ACFD-ACFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-01.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+AD01-AD03, U+AD05-AD10, U+AD12-AD17, U+AD19-AD1B, U+AD1D-AD4F, U+AD51-AD6B, U+AD6E-AD73, U+AD76-AD8B, U+AD8D-ADDB, U+ADDD-ADDF, U+ADE1-ADF7, U+ADF9-ADFB, U+ADFD-ADFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-02.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+AE01-AE07, U+AE0A-AE2F, U+AE31-AE33, U+AE35-AE37, U+AE39-AE3F, U+AE41-AE49, U+AE4B, U+AE4D-AE53, U+AE55-AE5B, U+AE5E-AE67, U+AE69-AEBB, U+AEBD-AECC, U+AECE-AED7, U+AED9-AEF3, U+AEF5-AEFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-03.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+AF00-AFC7, U+AFC9-AFD3, U+AFD5-AFFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-04.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+B000-B00B, U+B00D-B049, U+B04B-B056, U+B058-B05C, U+B05E-B07B, U+B07D-B08B, U+B08D-B097, U+B09A-B09B, U+B09D-B09F, U+B0A1-B0A7, U+B0A9-B0AA, U+B0AC-B0AD, U+B0AF-B0B3, U+B0B5-B0B7, U+B0B9-B0C7, U+B0C9-B0E4, U+B0E6-B0FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-05.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+B100-B107, U+B10A-B10B, U+B10D-B10F, U+B111-B112, U+B114-B117, U+B119-B122, U+B125-B143, U+B145-B14F, U+B151-B177, U+B179-B191, U+B194-B1FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-06.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+B200-B203, U+B205-B207, U+B209-B20B, U+B20D-B28F, U+B291-B293, U+B295-B297, U+B299-B2A4, U+B2A7-B2C7, U+B2C9-B2DC, U+B2DE-B2E3, U+B2E6-B2E7, U+B2E9-B2EA, U+B2ED-B2F2, U+B2F5-B2F8, U+B2FA-B2FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-07.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+B301-B353, U+B355-B357, U+B359-B35B, U+B35D-B36D, U+B36F, U+B371-B3C3, U+B3C6-B3CB, U+B3CD-B3D8, U+B3DA-B3FB, U+B3FD-B3FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-08.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+B400-B40F, U+B411-B417, U+B419-B41B, U+B41D-B41F, U+B421-B427, U+B42A-B44F, U+B451-B453, U+B455-B457, U+B459-B464, U+B466-B46B, U+B46D-B4A3, U+B4A5-B4DB, U+B4DE-B4DF, U+B4E1-B4E3, U+B4E5-B4F0, U+B4F2-B4FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-09.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+B500-B513, U+B515-B517, U+B519-B528, U+B52A-B52F, U+B531-B54B, U+B54D-B59F, U+B5A1-B5A3, U+B5A5-B5A7, U+B5A9-B5FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-10.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+B600-B69C, U+B69E-B6FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-11.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+B700-B727, U+B729-B737, U+B739-B743, U+B745-B77B, U+B77E-B77F, U+B781-B78B, U+B78D-B78F, U+B791-B797, U+B79A-B79B, U+B79D-B7B4, U+B7B6-B7C8, U+B7CA-B7EB, U+B7ED-B7EF, U+B7F1-B7FB, U+B7FE-B7FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-12.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+B800-B807, U+B809-B823, U+B826-B837, U+B83A-B85B, U+B85E-B863, U+B865-B8CB, U+B8CD-B8E7, U+B8E9-B8EF, U+B8F1-B8FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-13.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+B900-B957, U+B959-B95F, U+B961-B973, U+B975-B977, U+B979-B97B, U+B97D-B983, U+B985-B98D, U+B98F-B9AB, U+B9AE-B9AF, U+B9B1-B9BB, U+B9BE, U+B9C0, U+B9C2-B9C7, U+B9CA-B9CB, U+B9CD, U+B9CF, U+B9D1-B9DC, U+B9DF-B9E2, U+B9E4-B9E7, U+B9E9-B9F6, U+B9F8-B9FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-14.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+BA00-BA38, U+BA3A-BA3B, U+BA3D-BA3F, U+BA41-BA47, U+BA49-BA53, U+BA55-BA6F, U+BA71-BA73, U+BA75-BA84, U+BA86-BAA7, U+BAAA, U+BAAC-BAAF, U+BAB1-BAB7, U+BAB9-BABA, U+BABC-BAFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-15.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+BB00-BB33, U+BB35-BB37, U+BB39-BB3B, U+BB3D-BB48, U+BB4A-BBBF, U+BBC1-BBF7, U+BBF9-BBFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-16.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+BC01-BC10, U+BC12-BC13, U+BC15, U+BC17, U+BC19-BC1A, U+BC1E-BC28, U+BC2A-BC2F, U+BC32-BC37, U+BC39-BC48, U+BC4A-BC83, U+BC85-BC87, U+BC89-BC8B, U+BC8D-BC93, U+BC96-BCA7, U+BCA9-BCBC, U+BCBE-BCBF, U+BCC1-BCC3, U+BCC5-BCCC, U+BCCE-BCF3, U+BCF6-BCF7, U+BCF9-BCFB, U+BCFD-BCFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-17.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+BD00-BD06, U+BD08-BD7F, U+BD81-BD83, U+BD85-BD87, U+BD8A-BD98, U+BD9A-BDEF, U+BDF1-BDFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-18.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+BE00-BE0B, U+BE0D-BE13, U+BE15-BE43, U+BE45-BE47, U+BE49-BE4B, U+BE4D-BE5A, U+BE5C-BE60, U+BE62-BE67, U+BE69-BE7B, U+BE7D-BE8E, U+BE90-BEFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-19.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+BF00-BF17, U+BF19-BFCF, U+BFD1-BFFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-20.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+C000-C0AB, U+C0AD-C0AF, U+C0B1-C0B3, U+C0B5-C0C0, U+C0C2-C0C7, U+C0CA-C0DC, U+C0DE-C0F6, U+C0F8-C0FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-21.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+C100-C11B, U+C11F, U+C121-C123, U+C125-C130, U+C132-C137, U+C139-C13F, U+C141-C14A, U+C14C-C157, U+C159-C18B, U+C18E-C18F, U+C191-C1A0, U+C1A2-C1C3, U+C1C5-C1FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-22.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+C200-C217, U+C219-C21B, U+C21D-C227, U+C229-C22A, U+C22C-C26B, U+C26D-C26F, U+C271-C287, U+C289-C2A3, U+C2A5-C2AB, U+C2AD-C2B4, U+C2B6-C2DB, U+C2DE-C2DF, U+C2E1-C2E3, U+C2E5-C2F5, U+C2F7, U+C2F9-C2FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-23.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+C300-C312, U+C314-C3FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-24.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+C400-C4EF, U+C4F1-C4F3, U+C4F5-C4F7, U+C4F9-C4FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-25.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+C500-C528, U+C52A-C52B, U+C52D-C543, U+C545-C547, U+C54B, U+C54D-C554, U+C556-C557, U+C55A-C55D, U+C55F, U+C561-C570, U+C572-C57B, U+C57E-C590, U+C592-C594, U+C596-C5B3, U+C5B6-C5B7, U+C5BA, U+C5BD-C5C4, U+C5C9-C5CF, U+C5D1-C5D3, U+C5D5-C5EB, U+C5EE-C5EF, U+C5F1-C5F3, U+C5F5-C5FB, U+C5FD-C5FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-26.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+C602-C604, U+C606-C607, U+C609-C623, U+C625-C627, U+C629-C62B, U+C62D, U+C62F-C63F, U+C641-C643, U+C645-C653, U+C655-C65B, U+C65D-C677, U+C679-C67B, U+C67D-C693, U+C695-C6A8, U+C6AA-C6AF, U+C6B1-C6B3, U+C6B5-C6BF, U+C6C1-C6C2, U+C6C4-C6CB, U+C6CD-C6CF, U+C6D1-C6D3, U+C6D5-C6DF, U+C6E1-C6F8, U+C6FA-C6FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-27.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+C700-C703, U+C705-C714, U+C716-C71F, U+C721-C73B, U+C73D-C73F, U+C741-C743, U+C745-C74B, U+C74D-C757, U+C759-C773, U+C775-C777, U+C779-C77B, U+C77E-C782, U+C786-C787, U+C78A-C78F, U+C792-C797, U+C799-C79F, U+C7A2-C7A4, U+C7A6-C7AB, U+C7AD-C7FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-28.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+C802-C803, U+C805-C807, U+C809-C80F, U+C812-C814, U+C816-C81B, U+C81D-C837, U+C839-C86F, U+C872-C873, U+C875-C880, U+C882-C884, U+C886-C88A, U+C88D-C8FB, U+C8FE-C8FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-29.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+C901-C903, U+C905-C910, U+C912-C987, U+C98A-C99C, U+C99E-C9BF, U+C9C2-C9C3, U+C9C5-C9C7, U+C9C9-C9CF, U+C9D2-C9DB, U+C9DE-C9DF, U+C9E1-C9E6, U+C9E8-C9EF, U+C9F1-C9F7, U+C9F9-C9FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-30.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+CA00-CA4C, U+CA4E-CABB, U+CABE-CAFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-31.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+CB00-CBE3, U+CBE5-CBFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-32.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+CC00-CC27, U+CC2A-CC2D, U+CC2F-CC3C, U+CC3E-CC43, U+CC45-CC97, U+CC9A-CC9B, U+CC9D-CCAA, U+CCAC, U+CCAE-CCB3, U+CCB5-CCCF, U+CCD1-CCE3, U+CCE5-CCFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-33.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+CD00-CD07, U+CD0A-CD17, U+CD19-CD2B, U+CD2D-CD5B, U+CD5D-CD93, U+CD96-CD97, U+CD99-CD9B, U+CD9D-CDA3, U+CDA5-CDA8, U+CDAA-CDAF, U+CDB1-CDC3, U+CDC5-CDE7, U+CDE9-CDFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-34.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+CE00-CE1F, U+CE22-CE57, U+CE5A-CE5B, U+CE5D-CE5F, U+CE61-CE67, U+CE69-CE73, U+CE75-CE77, U+CE79-CEE3, U+CEE5-CEF3, U+CEF5-CEFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-35.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+CF01-CF1B, U+CF1D-CF2F, U+CF31-CF53, U+CF56-CFFB, U+CFFD-CFFF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-36.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+D000-D06B, U+D06D-D06F, U+D071-D073, U+D075-D07B, U+D07D-D0A3, U+D0A5-D0A7, U+D0A9-D0B6, U+D0B8, U+D0BA-D0BF, U+D0C2-D0C3, U+D0C5-D0C7, U+D0C9-D0DB, U+D0DE-D0E3, U+D0E5-D0EC, U+D0EE-D0FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-37.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+D100-D12F, U+D131-D133, U+D135-D14B, U+D14E-D153, U+D155-D15B, U+D15D-D19F, U+D1A2-D1B0, U+D1B2-D1B4, U+D1B6-D1FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-38.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+D200-D22B, U+D22D-D294, U+D296-D2B7, U+D2B9-D2BB, U+D2BD-D2BF, U+D2C1-D2EF, U+D2F1-D2F3, U+D2F5-D2FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-39.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+D300-D30B, U+D30D-D30F, U+D311-D313, U+D315-D327, U+D329-D37B, U+D37D-D383, U+D385-D397, U+D399-D3B7, U+D3B9-D3EB, U+D3EE-D3EF, U+D3F1-D3FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-40.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+D400-D45B, U+D45D-D477, U+D479-D47F, U+D481-D487, U+D489-D4FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-41.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+D500-D503, U+D505-D50B, U+D50D-D53B, U+D53E-D543, U+D545-D54E, U+D550-D557, U+D55A-D55B, U+D55D-D55F, U+D561-D567, U+D56A-D56C, U+D56E-D573, U+D575-D587, U+D58A-D5A4, U+D5A6-D5C7, U+D5C9-D5E3, U+D5E5-D5FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-42.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+D601-D603, U+D605-D614, U+D616-D637, U+D639-D63B, U+D63D-D653, U+D656-D657, U+D659-D65B, U+D65D-D668, U+D66A-D68B, U+D68E-D69E, U+D6A0-D6C3, U+D6C5-D6E7, U+D6E9-D6FF;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/app/fonts/pretendard/kr-43.woff2') format('woff2-variations');
+  font-weight: 45 920;
+  font-display: swap;
+  unicode-range: U+D700-D717, U+D719-D748, U+D74A-D74F, U+D751-D753, U+D755-D757, U+D759-D768, U+D76A-D76F, U+D771-D787, U+D789-D78B, U+D78D-D78F, U+D791-D7A3;
+}

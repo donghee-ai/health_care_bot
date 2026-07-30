@@ -107,6 +107,13 @@ def hip_center_normalized(kp, frame_h, frame_w, conf_th=0.3):
     return _mean_center(kp, ("left_hip", "right_hip"), frame_h, frame_w, conf_th)
 
 
+def shoulder_center_normalized(kp, frame_h, frame_w, conf_th=0.3):
+    """두 어깨 중점 → 정규화. 상체 운동(팔 들기: 숄더프레스/레터럴) PTZ 추적점.
+    어깨는 상하로 거의 안 흔들려 안정적이고, 이 점을 화면 하단쪽에 두면 머리 위로
+    든 팔이 프레임 안에 남는다."""
+    return _mean_center(kp, ("left_shoulder", "right_shoulder"), frame_h, frame_w, conf_th)
+
+
 def person_center_weighted(kp, frame_h, frame_w, conf_th=0.3, weights=None):
     """keypoint별 가중 평균 기반 추적 중심점. weights: {keypoint_name: weight}.
     confidence가 낮아 빠진 keypoint가 있으면 남은 것들로 가중치를 재정규화

@@ -35,6 +35,15 @@ def elbow_angle(kp, side, conf_th=0.3):
     return _joint_angle(kp, (f"{side}_shoulder", f"{side}_elbow", f"{side}_wrist"), conf_th)
 
 
+def shoulder_elev_angle(kp, side, conf_th=0.3):
+    """elbow-shoulder-hip 각도 = 어깨 올림(팔 들기) 각도. side='left'|'right'.
+
+    팔을 내리면 ≈10~20°, 옆으로 어깨 높이(레터럴 레이즈)면 ≈90°,
+    머리 위로 편 상태(숄더프레스)면 ≈160~170°. 정면을 보고 서서 하는
+    상체 운동을 하나의 각도로 커버한다 (몸 방향 무관, 이미지 평면 안 움직임)."""
+    return _joint_angle(kp, (f"{side}_elbow", f"{side}_shoulder", f"{side}_hip"), conf_th)
+
+
 def pick_angle(left, right, mode="better"):
     """좌/우 중 1개 대표 각도.
     'better': 둘 다 있으면 평균, 한쪽만 있으면 그쪽.

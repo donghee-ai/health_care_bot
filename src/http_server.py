@@ -34,30 +34,47 @@ _viewer_count = 0
 # 추론 루프 객체(ptz/counter)에 접근한다.
 _ptz = None
 _squat_c = None
-_pushup_c = None
+_overhead_c = None
+_lateral_c = None
 _avg_fps_fn = None
 
 _WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 
 
-def init_app(ptz=None, squat_c=None, pushup_c=None, avg_fps_fn=None):
+def init_app(ptz=None, squat_c=None, overhead_c=None, lateral_c=None, avg_fps_fn=None):
     """main.py에서 추론 루프 시작 전 1회 호출 - API handler가 쓸 참조 등록."""
-    global _ptz, _squat_c, _pushup_c, _avg_fps_fn
+    global _ptz, _squat_c, _overhead_c, _lateral_c, _avg_fps_fn
     _ptz = ptz
     _squat_c = squat_c
-    _pushup_c = pushup_c
+    _overhead_c = overhead_c
+    _lateral_c = lateral_c
     _avg_fps_fn = avg_fps_fn
 
 
-def update_live_state(annotated_bgr, stats_dict, q=70):
+def update_live_state(annotated_bgr, stats_dict, q=70, encode=True):
+    """stats(숫자)와 jpg(영상)를 갱신.
+
+    encode=False면 JPEG 인코딩을 건너뛰고 stats만 갱신한다 — main.py의
+    --idle-skip-draw(연산 집중 모드)가 뷰어 0명일 때 쓴다. 인코딩을 생략해도
+    stats.json은 계속 최신으로 흐른다. encode=True(기본)면 기존과 동일.
+    """
     global _latest_jpg, _latest_stats, _latest_frame_ts_ms
-    ok, buf = cv2.imencode('.jpg', annotated_bgr, [cv2.IMWRITE_JPEG_QUALITY, q])
-    if not ok:
-        return
+    jpg = None
+    if encode and annotated_bgr is not None:
+        ok, buf = cv2.imencode('.jpg', annotated_bgr, [cv2.IMWRITE_JPEG_QUALITY, q])
+        if ok:
+            jpg = buf.tobytes()
     with _state_lock:
-        _latest_jpg = buf.tobytes()
+        if jpg is not None:
+            _latest_jpg = jpg
         _latest_stats = dict(stats_dict)
         _latest_frame_ts_ms = time.time() * 1000.0
+
+
+def viewer_count() -> int:
+    """지금 /stream.mjpg를 보는 뷰어 수 (main.py 게이팅용)."""
+    with _viewer_lock:
+        return _viewer_count
 
 
 def _get_jpg():
@@ -104,7 +121,7 @@ pre{background:#000;color:#8bc34a;padding:12px;border-radius:4px;overflow:auto;f
 a{color:#8ecdf7;}
 </style></head><body>
 <h2>UNO Q Health Care Bot
-<span class="tag">squat + pushup</span><span class="tag">PTZ</span><span class="tag">MoveNet Thunder INT8</span></h2>
+<span class="tag">squat + overhead + lateral</span><span class="tag">PTZ</span><span class="tag">MoveNet Thunder INT8</span></h2>
 <p>모바일 앱: <a href="/app">/app</a> (viewer) · <a href="/app?role=operator">/app?role=operator</a> (operator)</p>
 <div class="layout">
 <div class="stream">
@@ -282,10 +299,9 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if not _require_control(self, body):
                 return
             target = body.get('target_reps')
-            if _squat_c is not None:
-                _squat_c.reset()
-            if _pushup_c is not None:
-                _pushup_c.reset()
+            for _c in (_squat_c, _overhead_c, _lateral_c):
+                if _c is not None:
+                    _c.reset()
             return _send_json(self, 200, app_state.session_start(target))
 
         if path == '/api/session/pause':
@@ -301,18 +317,22 @@ class _Handler(http.server.BaseHTTPRequestHandler):
         if path == '/api/session/reset':
             if not _require_control(self, body):
                 return
-            reset_fn = None
-            if _squat_c is not None and _pushup_c is not None:
-                reset_fn = lambda: (_squat_c.reset(), _pushup_c.reset())
+            def reset_fn():
+                for _c in (_squat_c, _overhead_c, _lateral_c):
+                    if _c is not None:
+                        _c.reset()
             return _send_json(self, 200, app_state.session_reset(reset_fn))
 
         if path == '/api/session/finish':
             if not _require_control(self, body):
                 return
-            squat_snap = _squat_c.snapshot() if _squat_c is not None else None
-            pushup_snap = _pushup_c.snapshot() if _pushup_c is not None else None
+            snaps = {
+                "squat": _squat_c.snapshot() if _squat_c is not None else None,
+                "overhead": _overhead_c.snapshot() if _overhead_c is not None else None,
+                "lateral": _lateral_c.snapshot() if _lateral_c is not None else None,
+            }
             avg_fps = _avg_fps_fn() if _avg_fps_fn is not None else None
-            return _send_json(self, 200, app_state.session_finish(squat_snap, pushup_snap, avg_fps))
+            return _send_json(self, 200, app_state.session_finish(snaps, avg_fps))
 
         self.send_response(404)
         self.end_headers()

@@ -88,8 +88,17 @@ def SquatCounter(down_th: float = 100.0, up_th: float = 140.0,
     return RepCounter(down_th=down_th, up_th=up_th, name="squat", min_dwell_ms=min_dwell_ms)
 
 
-def PushupCounter(down_th: float = 90.0, up_th: float = 160.0,
-                  min_dwell_ms: float = 200.0) -> RepCounter:
-    """팔꿈치 각도 shoulder-elbow-wrist 기반.
-    down<90 → 내려감 (가슴이 바닥 근처), up>160 → 펴짐 (팔꿈치 lockout 직전)."""
-    return RepCounter(down_th=down_th, up_th=up_th, name="pushup", min_dwell_ms=min_dwell_ms)
+def OverheadPressCounter(down_th: float = 60.0, up_th: float = 140.0,
+                         min_dwell_ms: float = 200.0) -> RepCounter:
+    """어깨 올림 각도 elbow-shoulder-hip 기반 (팔 위로 / 숄더프레스).
+    down<60 → 팔 내림(휴식), up>140 → 머리 위로 편 상태. 정면에서 강건 —
+    푸시업과 달리 팔이 이미지 평면 안(수직)에서 움직여 각도가 안 뭉개진다."""
+    return RepCounter(down_th=down_th, up_th=up_th, name="overhead", min_dwell_ms=min_dwell_ms)
+
+
+def LateralRaiseCounter(down_th: float = 35.0, up_th: float = 80.0,
+                        min_dwell_ms: float = 200.0) -> RepCounter:
+    """어깨 올림 각도 elbow-shoulder-hip 기반 (사이드 레터럴 레이즈).
+    down<35 → 팔 내림, up>80 → 어깨 높이로 옆으로 든 상태. 팔이 완전한 정면
+    평면(옆으로)에서 움직여 2D 포즈 오차가 가장 적은 종목."""
+    return RepCounter(down_th=down_th, up_th=up_th, name="lateral", min_dwell_ms=min_dwell_ms)

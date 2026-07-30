@@ -27,6 +27,7 @@ from typing import Optional
 
 from pose_utils import (
     KP, knee_center_normalized, hip_center_normalized, person_center_normalized,
+    shoulder_center_normalized,
 )
 
 try:
@@ -65,6 +66,13 @@ class PTZController:
     # 데드존을 넓게 잡아 "큰 프레이밍 오차"만 교정한다.
     pitch_deadzone: float = 0.20
     pitch_target_y: float = 0.62         # pitch 세로 기준점 (무릎이 화면 하단 1/3쯤)
+    # 상체 모드(숄더프레스/레터럴): 무릎 대신 어깨를 추적하고, 어깨를 화면
+    # 하단쪽(pitch_target_y_upper)에 둬 머리 위로 든 팔이 프레임 밖으로 잘리지
+    # 않게 한다. 어깨는 상하로 거의 안 흔들리므로 데드존은 좁게. main.py가
+    # set_track_mode()로 운동 종목에 맞춰 넘긴다.
+    pitch_target_y_upper: float = 0.64
+    pitch_deadzone_upper: float = 0.15
+    track_mode: str = "lower"            # "lower"(스쿼트: 무릎) | "upper"(상체: 어깨)
     reengage: float = 0.18
     yaw_reengage_hyst: float = 0.05
     lock_frames: int = 10
@@ -214,6 +222,11 @@ class PTZController:
     def set_auto_track(self, enabled: bool):
         self.auto_track_enabled = bool(enabled)
 
+    def set_track_mode(self, exercise_or_mode: str):
+        """운동 종목에 맞춰 추적 타깃/프레이밍 전환.
+        overhead/lateral(또는 'upper') → 상체(어깨 중점), 그 외 → 하체(무릎 중점)."""
+        self.track_mode = "upper" if exercise_or_mode in ("upper", "overhead", "lateral") else "lower"
+
     def manual_pan(self, delta_deg: float):
         """운영자 직접 조작 - cooldown 무관 즉시, 소프트리밋 클램프."""
         delta_deg = self._clamp(float(delta_deg), -10.0, 10.0)
@@ -246,8 +259,13 @@ class PTZController:
     # ---------- 추적 ----------
 
     def _target(self, kp, frame_h, frame_w):
-        """두 무릎 중점 → 엉덩이 중심 → 몸통 중심."""
-        tx, ty = knee_center_normalized(kp, frame_h, frame_w, self.conf_th, require_both=True)
+        """추적 목표점.
+        lower(스쿼트): 두 무릎 중점 → 엉덩이 → 몸통.
+        upper(상체): 두 어깨 중점 → 엉덩이 → 몸통 (머리 위 팔을 위해 상체 추적)."""
+        if self.track_mode == "upper":
+            tx, ty = shoulder_center_normalized(kp, frame_h, frame_w, self.conf_th)
+        else:
+            tx, ty = knee_center_normalized(kp, frame_h, frame_w, self.conf_th, require_both=True)
         if tx is None:
             tx, ty = hip_center_normalized(kp, frame_h, frame_w, self.conf_th)
         if tx is None:
@@ -365,11 +383,15 @@ class PTZController:
         else:
             self._last_subject_vel = 0.0
         self._prev_smooth_x = self._smooth_x
+        # 모드별 프레이밍: upper(상체)면 어깨를 화면 아래쪽에 둬 머리 위 팔 공간 확보.
+        pt_y = self.pitch_target_y_upper if self.track_mode == "upper" else self.pitch_target_y
+        pdz = self.pitch_deadzone_upper if self.track_mode == "upper" else self.pitch_deadzone
         ex = self._smooth_x - 0.5
-        ey = self._smooth_y - self.pitch_target_y
+        ey = self._smooth_y - pt_y
 
-        # 양 무릎 가시 여부 → 속도 배율 + 밴드 판정
-        both_knees = (kp[KP["left_knee"], 2] >= self.conf_th and
+        # 양 무릎 가시 여부 → 속도 배율 + 밴드 판정 (하체 모드에서만)
+        both_knees = (self.track_mode == "lower" and
+                      kp[KP["left_knee"], 2] >= self.conf_th and
                       kp[KP["right_knee"], 2] >= self.conf_th)
         scale = self.track_scale * (self.both_knee_scale if both_knees else 1.0)
 
@@ -381,7 +403,7 @@ class PTZController:
             rx = kp[KP["right_knee"], 1] / frame_w
             knees_in_band = (band <= lx <= 1 - band) and (band <= rx <= 1 - band)
         yaw_out = (abs(ex) > yaw_dead) or (not knees_in_band)
-        pitch_out = abs(ey) > self.pitch_deadzone
+        pitch_out = abs(ey) > pdz
 
         # 상태 표시
         self.state = TrackState.EDGE if (yaw_out or pitch_out) else TrackState.IN_FRAME

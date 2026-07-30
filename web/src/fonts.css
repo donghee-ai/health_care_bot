@@ -1,0 +1,35 @@
+/* 전부 self-host. 로봇은 LAN 전용이라 구글 폰트 CDN에 못 나간다 —
+   CDN을 쓰면 시연장에서 폰트만 통째로 안 뜨는 사고가 난다.
+   @font-face는 실제로 쓰일 때만 받으므로, 지금 후보(CALM)가 쓰는
+   폰트만 네트워크를 탄다.
+
+   서체 선정 기준 두 가지:
+   1. 숫자가 tabular 가능할 것 — 실시간으로 바뀌는 계측값을 다루는 앱이라
+      자릿수가 흔들리는 서체는 애초에 후보가 아니다.
+      (예: Fraunces는 tnum 자체가 없어서 탈락시켰다.)
+   2. 흔하지 않을 것 — Inter/Poppins/Montserrat/Outfit 계열은 지금
+      "기본값 그대로 쓴 화면"으로 읽힌다. 정성을 들인 티가 안 난다.
+
+   ※ 시안이 4종일 때는 Spline Sans Mono(INSTRUMENT) / Newsreader(ALMANAC)
+     / Archivo(STADIUM)도 있었으나, CALM만 후보로 남기면서 함께 삭제했다.
+     되살리려면 backup/web_2026-07-20_pre_redesign/src/fonts.css 참고. */
+
+/* ---- 한글 본문 ----
+   한글 웹폰트는 선택지가 좁고, Pretendard는 한국어 UI에서 사실상
+   표준에 가깝다. 여기서 개성을 내려다 가독성을 잃는 건 손해다.
+   개성은 라틴/숫자 디스플레이 서체 쪽에서 만든다.
+
+   원본 2.0MB를 unicode-range 조각으로 쪼개서 쓴다 (scripts/subset_pretendard.py).
+   화면에 실제로 뜨는 글자가 든 조각만 내려받으므로 첫 로딩이 훨씬 가볍다. */
+@import './pretendard.css';
+
+/* ---- CALM: Gabarito ----
+   친근한 기하학 산세리프. Outfit/Poppins 자리에 놓되 그 둘만큼
+   닳지 않았다. 부드러움은 서체보다 색·여백·모서리에서 만들고,
+   서체는 거들기만 하게 둔다. */
+@font-face {
+  font-family: 'Gabarito';
+  src: url('/app/fonts/gabarito-var.woff2') format('woff2-variations');
+  font-weight: 400 900;
+  font-display: swap;
+}

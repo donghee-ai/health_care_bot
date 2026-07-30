@@ -20,7 +20,7 @@ _CONTROL_LOCK_MS = 60_000.0
 # === 운동 세션 상태 ===
 _session = {
     "session_id": None,
-    "mode": "auto",          # auto | squat | pushup
+    "mode": "squat",         # squat | overhead | lateral
     "status": "idle",        # idle | running | paused | finished
     "target_reps": 20,
     "started_at_ms": None,
@@ -92,7 +92,7 @@ def control_snapshot() -> dict:
 # ---------- 운동 세션 ----------
 
 def set_mode(mode: str) -> dict:
-    if mode not in ("auto", "squat", "pushup"):
+    if mode not in ("squat", "overhead", "lateral"):
         return {"ok": False, "error": "invalid_mode"}
     with _lock:
         _session["mode"] = mode
@@ -148,7 +148,9 @@ def session_reset(reset_counters_fn=None) -> dict:
     return {"ok": True}
 
 
-def session_finish(squat_snapshot=None, pushup_snapshot=None, avg_fps=None) -> dict:
+def session_finish(snaps=None, avg_fps=None) -> dict:
+    """snaps = {"squat": snapshot, "overhead": ..., "lateral": ...} (일부 None 허용)."""
+    snaps = snaps or {}
     with _lock:
         if _session["started_at_ms"] is None:
             return {"ok": False, "error": "no_active_session"}
@@ -159,10 +161,8 @@ def session_finish(squat_snapshot=None, pushup_snapshot=None, avg_fps=None) -> d
             "session_id": _session["session_id"],
             "mode": _session["mode"],
             "elapsed_ms": max(0, round(elapsed_ms)),
-            "squat_reps": (squat_snapshot or {}).get("reps", 0),
-            "pushup_reps": (pushup_snapshot or {}).get("reps", 0),
-            "squat_best_deg": (squat_snapshot or {}).get("deepest_overall_deg"),
-            "pushup_best_deg": (pushup_snapshot or {}).get("deepest_overall_deg"),
+            "reps": {k: (v or {}).get("reps", 0) for k, v in snaps.items()},
+            "best_deg": {k: (v or {}).get("deepest_overall_deg") for k, v in snaps.items()},
             "avg_fps": avg_fps,
             "finished_at_ms": int(_now_ms()),
         }

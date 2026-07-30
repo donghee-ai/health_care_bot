@@ -1,0 +1,175 @@
+/* 시안 선택 시트 — 어떤 시안 위에 떠도 중립이어야 하므로
+   무채색 + 시스템 스택으로만 짠다. 여기서 개성을 내면
+   아래 깔린 시안의 인상을 오염시킨다. */
+
+.vp-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(8, 8, 10, 0.55);
+  backdrop-filter: blur(8px) saturate(0.6);
+  animation: vp-fade 180ms ease both;
+  padding: 0 0 env(safe-area-inset-bottom);
+}
+
+@media (min-width: 760px) {
+  .vp-backdrop {
+    align-items: center;
+    padding: 24px;
+  }
+}
+
+.vp-sheet {
+  width: 100%;
+  max-width: 520px;
+  background: #16171a;
+  color: #f2f2f3;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px 20px 0 0;
+  padding: 10px 18px 20px;
+  font-family: 'Pretendard', system-ui, sans-serif;
+  animation: vp-rise 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  outline: none;
+}
+
+@media (min-width: 760px) {
+  .vp-sheet {
+    border-radius: 18px;
+  }
+}
+
+.vp-grip {
+  width: 38px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.18);
+  margin: 0 auto 14px;
+}
+
+@media (min-width: 760px) {
+  .vp-grip { display: none; }
+}
+
+.vp-head {
+  padding: 0 2px 14px;
+}
+
+.vp-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.vp-sub {
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(242, 242, 243, 0.5);
+}
+
+.vp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vp-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 12px;
+  border-radius: 13px;
+  border: 1px solid transparent;
+  text-align: left;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.vp-item:hover {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.vp-item.is-active {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* 스와치가 곧 시안의 요약이다 — 이름보다 색이 먼저 읽힌다 */
+.vp-swatch {
+  display: flex;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.vp-swatch i {
+  flex: 1;
+}
+
+.vp-item__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.vp-item__name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.vp-item__tag {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: rgba(242, 242, 243, 0.62);
+}
+
+.vp-item__lineage {
+  font-size: 11px;
+  color: rgba(242, 242, 243, 0.36);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vp-key {
+  font-family: ui-monospace, 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(242, 242, 243, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 3px 7px;
+  flex-shrink: 0;
+}
+
+.vp-close {
+  width: 100%;
+  margin-top: 14px;
+  padding: 13px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #f2f2f3;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+@keyframes vp-fade {
+  from { opacity: 0; }
+}
+
+@keyframes vp-rise {
+  from { transform: translateY(14px); opacity: 0; }
+}
