@@ -8,7 +8,7 @@ PTZ 상체/하체 추적([`_03`](2026-07-26_03_ptz_track_mode_upper_lower_body.m
 
 ## 무엇을
 
-[`docs/exercise_detection.md`](../exercise_detection.md) 신규 작성 — 운동 감지·카운팅의
+[`docs/exercise_detection.md`](../04_algorithm_exercise.md) 신규 작성 — 운동 감지·카운팅의
 **설계 레퍼런스**. 히스토리(경위)와 달리 "지금 어떻게 동작하는가"를 정리한 문서다.
 
 담은 내용:
@@ -26,6 +26,6 @@ PTZ 상체/하체 추적([`_03`](2026-07-26_03_ptz_track_mode_upper_lower_body.m
 
 ## 관련
 
-- 문서: [`docs/exercise_detection.md`](../exercise_detection.md)
+- 문서: [`docs/exercise_detection.md`](../04_algorithm_exercise.md)
 - 구현 히스토리: [`_02`](2026-07-26_02_pushup_removed_overhead_lateral_added.md),
   [`_03`](2026-07-26_03_ptz_track_mode_upper_lower_body.md)

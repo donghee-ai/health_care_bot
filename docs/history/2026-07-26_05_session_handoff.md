@@ -3,6 +3,12 @@
 > 다음 세션은 이 문서부터 읽으면 오늘까지의 맥락이 잡힙니다. 하드웨어/서보/PTZ
 > 저수준 배경은 `docs/HANDOFF.md`(07-17), 종목 감지 설계는
 > `docs/exercise_detection.md` 참고.
+>
+> **경로 안내 (2026-07-30 재편)** — 위 두 문서는 `docs/00~09` 번호 체계로 이관됐습니다:
+> HANDOFF → [`06_hardware_calibration.md`](../06_hardware_calibration.md)(하드웨어 값) ·
+> [`07_runbook.md`](../07_runbook.md)(실행/환경) · [`08_troubleshooting.md`](../08_troubleshooting.md)(함정),
+> exercise_detection → [`04_algorithm_exercise.md`](../04_algorithm_exercise.md).
+> 전체 지도는 [`00_project_blueprint.md`](../00_project_blueprint.md) §6.
 
 ---
 
@@ -118,7 +124,7 @@ docker stop health-care-bot                      # 중지
 
 ## 8. 관련 문서 / 히스토리 (오늘)
 
-- 설계: [`exercise_detection.md`](../exercise_detection.md)
+- 설계: [`04_algorithm_exercise.md`](../04_algorithm_exercise.md) (당시 `exercise_detection.md`)
 - [`2026-07-26_01`](2026-07-26_01_apple_design_ui_live_and_8080_unify.md) 애플 UI + 8080 통일
 - [`2026-07-26_02`](2026-07-26_02_pushup_removed_overhead_lateral_added.md) 종목 개편
 - [`2026-07-26_03`](2026-07-26_03_ptz_track_mode_upper_lower_body.md) PTZ 상체/하체

@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#000000" />
+<title>Health Care Bot — Fluid</title>
+<style>
+/* ============================================================
+   FLUID FITNESS — apple-design skill (MAIN)
+   Responsive by device:
+     • PHONE  (<820px): one-screen — wrap is 100dvh, camera flexes
+       and shrinks so controls always fit without scroll.
+     • DESKTOP(>=820px): roomy 2-column — a LARGE camera (never
+       shrunk) on the left, controls on the right, page scrolls.
+   Shared operator control (client_id "hcb-demo") so anyone at the
+   demo can drive. onLive is defensive: one bad frame never freezes
+   the live loop.
+   ============================================================ */
+:root{
+  --ink:#f5f5f7;--ink-2:rgba(235,235,245,.62);--ink-3:rgba(235,235,245,.32);
+  --hair:rgba(255,255,255,.10);--mat:rgba(255,255,255,.065);--mat-hi:rgba(255,255,255,.14);
+  --move:#30d158;--move-2:#a6f24e;--blue:#0a84ff;--amber:#ffd60a;--r:20px;font-synthesis:none;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:radial-gradient(120% 80% at 50% -10%,#14171c 0%,#000 60%) fixed;-webkit-font-smoothing:antialiased}
+
+/* ---- PHONE base (one-screen) ---- */
+.wrap{max-width:520px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;overflow:hidden;padding:0 14px calc(12px + env(safe-area-inset-bottom))}
+.topbar{flex:0 0 auto;display:flex;align-items:center;gap:9px;padding:12px 2px 10px}
+.topbar h1{font-size:18px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+.bot{width:22px;height:22px;border-radius:7px;background:linear-gradient(150deg,var(--move),var(--blue));display:grid;place-items:center}
+.bot::after{content:"";width:8px;height:8px;border-radius:50%;background:#000;box-shadow:0 0 0 2px rgba(255,255,255,.9) inset}
+.spacer{flex:1}
+.pill{font-size:12.5px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:7px;background:var(--mat);padding:6px 11px;border-radius:100px;border:.5px solid var(--hair)}
+.pdot{width:8px;height:8px;border-radius:50%;background:var(--move);box-shadow:0 0 8px var(--move)}
+.pdot.sim{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+.gear{width:34px;height:34px;border-radius:50%;background:var(--mat);border:.5px solid var(--hair);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;transition:background .2s}
+.gear:hover{background:var(--mat-hi)}
+.gear:active{transform:scale(.94);transition:transform .1s}
+.gear svg{width:18px;height:18px;display:block}
+
+.stage{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px}
+
+.viewport{position:relative;flex:1 1 auto;min-height:150px;border-radius:var(--r);overflow:hidden;background:#0b0b0d;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 20px 46px -22px rgba(0,0,0,.9)}
+.viewport video,.viewport img.feed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;will-change:transform}
+.viewport video{transform:scaleX(-1);transition:transform .1s linear}
+.viewport img.feed{transform:none}
+.hide{display:none !important}
+.vhud{position:absolute;inset:0;pointer-events:none}
+.reticle{position:absolute;left:50%;top:42%;width:86px;height:86px;margin:-43px 0 0 -43px;border:2px solid rgba(255,255,255,.92);border-radius:16px;box-shadow:0 0 0 1px rgba(0,0,0,.3),0 0 20px rgba(48,209,88,.25);will-change:transform}
+.reticle::before,.reticle::after{content:"";position:absolute;background:rgba(255,255,255,.9)}
+.reticle::before{left:50%;top:50%;width:14px;height:2px;margin:-1px 0 0 -7px}
+.reticle::after{left:50%;top:50%;width:2px;height:14px;margin:-7px 0 0 -1px}
+.vtag{position:absolute;left:12px;top:12px;font-size:11px;font-weight:600;letter-spacing:.02em;color:#fff;background:rgba(0,0,0,.38);backdrop-filter:blur(8px);padding:5px 10px;border-radius:100px}
+.vgrad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.28),transparent 24%,transparent 52%,rgba(0,0,0,.72))}
+.hudb{position:absolute;left:14px;right:14px;bottom:12px;display:flex;align-items:flex-end;gap:14px;pointer-events:none}
+.ring{width:84px;height:84px;flex:0 0 auto;position:relative;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+.ring svg{transform:rotate(-90deg)}
+.ring .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .mid b{font-size:27px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1;display:block;will-change:transform}
+.ring .mid small{font-size:10px;font-weight:600;color:rgba(255,255,255,.7)}
+.hudinfo{flex:1;min-width:0;padding-bottom:4px;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.hudinfo .ex{font-size:12px;font-weight:600;color:rgba(255,255,255,.7)}
+.hudinfo .big{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1.05}
+.hudinfo .fb{font-size:13px;color:rgba(255,255,255,.9);line-height:1.3;margin-top:4px;transition:opacity .3s}
+.hudinfo .fb b{color:var(--move-2);font-weight:600}
+.startcam{position:absolute;inset:0;display:grid;place-items:center;gap:10px;background:rgba(0,0,0,.38);backdrop-filter:blur(4px);border:none;color:#fff;font:600 15px/1.2 inherit;cursor:pointer}
+.startcam[hidden]{display:none}
+.startcam span{font-size:34px}
+
+.dock{flex:0 0 auto;display:flex;flex-direction:column;gap:10px}
+.seg{position:relative;display:flex;background:var(--mat);border:.5px solid var(--hair);border-radius:13px;padding:4px;isolation:isolate}
+.seg .knob{position:absolute;top:4px;bottom:4px;left:4px;border-radius:9px;background:var(--mat-hi);box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 6px 14px -6px rgba(0,0,0,.7);z-index:-1;will-change:transform,width}
+.seg button{flex:1;background:none;border:none;color:var(--ink-2);font:600 14px/1 inherit;padding:10px 6px;border-radius:9px;cursor:pointer;letter-spacing:-.01em;transition:color .2s;position:relative}
+.seg button[aria-pressed="true"]{color:var(--ink)}
+.seg button:active{transform:scale(.97);transition:transform .1s}
+.seg button:disabled{color:var(--ink-3);cursor:not-allowed;opacity:.5}
+.seg button:disabled small{position:absolute;left:0;right:0;bottom:1px;font-size:8px;font-weight:600;letter-spacing:.02em}
+.ptz{background:var(--mat);border:.5px solid var(--hair);border-radius:var(--r);padding:12px 14px 14px}
+.ptz .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ptz .hd h2{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.ptz .hd .lk{font-size:13px;font-weight:700;color:var(--move);font-variant-numeric:tabular-nums}
+.ptz .seg{margin-bottom:11px}
+.ptz .seg button{font-size:13px;padding:8px 6px}
+.telem{display:flex;flex-direction:column;gap:8px}
+.chips{display:flex;gap:8px}
+.chip{flex:1;background:rgba(255,255,255,.04);border:.5px solid var(--hair);border-radius:12px;padding:9px 4px;text-align:center}
+.chip b{font-size:19px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;display:block;line-height:1.05}
+.chip span{display:block;font-size:9.5px;font-weight:600;color:var(--ink-3);letter-spacing:.01em;margin-top:3px}
+.cpurow{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;color:var(--ink-3);letter-spacing:.02em}
+.cpurow .ct{white-space:nowrap}.cpurow .ct b{color:var(--ink);font-variant-numeric:tabular-nums}
+.cpurow .track{flex:1;height:7px;border-radius:100px;background:rgba(255,255,255,.08);overflow:hidden}
+.cpurow .track i{display:block;height:100%;border-radius:100px;background:linear-gradient(90deg,var(--move),var(--move-2));width:0;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.capStrip{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 1px 4px;scrollbar-width:none}
+.capStrip::-webkit-scrollbar{display:none}
+.capEmpty{font-size:12px;color:var(--ink-3);padding:6px 0}
+.capThumb{flex:0 0 auto;width:64px;height:64px;border-radius:12px;overflow:hidden;position:relative;background:#0b0b0d;border:.5px solid var(--hair);cursor:pointer;padding:0}
+.capThumb img{width:100%;height:100%;object-fit:cover;display:block}
+.capThumb time{position:absolute;left:0;right:0;bottom:0;font-size:8.5px;font-weight:600;text-align:center;color:#fff;background:rgba(0,0,0,.55);padding:1.5px 0;letter-spacing:.01em}
+.capThumb:active{transform:scale(.94);transition:transform .1s}
+.lightbox{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;pointer-events:none;transition:opacity .25s ease;padding:24px}
+.lightbox.open{opacity:1;pointer-events:auto}
+.lightbox img{max-width:100%;max-height:78vh;border-radius:16px;box-shadow:0 24px 60px -20px rgba(0,0,0,.9);cursor:zoom-out}
+.lightbox time{color:rgba(255,255,255,.75);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.pad{position:relative;width:150px;height:150px;margin:0 auto;border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.08),rgba(255,255,255,.02) 70%);border:.5px solid var(--hair);touch-action:none}
+.pad .cross{position:absolute;inset:0}
+.pad .cross::before,.pad .cross::after{content:"";position:absolute;background:var(--hair)}
+.pad .cross::before{left:14px;right:14px;top:50%;height:1px}
+.pad .cross::after{top:14px;bottom:14px;left:50%;width:1px}
+.aim{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#cfd2d6 60%,#9aa0a6);box-shadow:0 8px 18px -6px rgba(0,0,0,.8),0 0 0 1px rgba(0,0,0,.25);display:grid;place-items:center;cursor:grab;will-change:transform;touch-action:none}
+.aim:active{cursor:grabbing}
+.aim::after{content:"";width:13px;height:13px;border-radius:50%;background:#0a84ff;box-shadow:0 0 10px rgba(10,132,255,.7)}
+.readout{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:12px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.readout b{color:var(--ink);display:block;font-size:15px;letter-spacing:-.02em}
+.jhint{text-align:center;color:var(--ink-3);font-size:11px;margin-top:8px}
+
+/* ---- DESKTOP (computer): roomy 2-column, LARGE camera, page scrolls ---- */
+@media (min-width:820px){
+  .wrap{max-width:680px;height:auto;min-height:100dvh;display:flex;flex-direction:column;overflow:visible;padding:0 20px 32px}
+  .topbar{padding:18px 4px 14px}
+  .topbar h1{font-size:22px}
+  .stage{display:flex;flex-direction:column;gap:14px;flex:none;min-height:0}
+  .viewport{aspect-ratio:4/3;min-height:0;flex:none}   /* big camera on top; info panels stack BELOW (not on the side), never shrunk */
+  .dock{gap:12px}
+  .ring{width:96px;height:96px}
+  .ring .mid b{font-size:30px}
+  .hudinfo .big{font-size:30px}
+  .hudinfo .fb{font-size:14px}
+  .pad{width:172px;height:172px}
+  .aim{width:52px;height:52px;margin:-26px 0 0 -26px}
+}
+
+/* ---- settings sheet ---- */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .35s ease}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:50%;bottom:0;z-index:41;width:min(440px,100%);transform:translate(-50%,110%);background:rgba(28,28,32,.88);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border:.5px solid var(--hair);border-bottom:none;border-radius:26px 26px 0 0;padding:10px 22px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -20px 60px -20px rgba(0,0,0,.8);transition:transform .5s cubic-bezier(.22,1,.32,1)}
+.sheet.open{transform:translate(-50%,0)}
+.grab{width:38px;height:5px;border-radius:100px;background:rgba(255,255,255,.22);margin:0 auto 14px}
+.sheet h3{font-size:20px;font-weight:700;letter-spacing:-.02em;text-align:center}
+.sheet .sub{font-size:13px;color:var(--ink-2);text-align:center;margin-top:4px}
+.qrwrap{background:#fff;border-radius:18px;padding:14px;width:200px;margin:16px auto 0;box-shadow:0 10px 30px -10px rgba(0,0,0,.6)}
+.qrwrap svg{width:100%;height:auto;display:block}
+.urlbox{margin:14px auto 0;background:var(--mat);border:.5px solid var(--hair);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:10px}
+.urlbox code{font:500 13px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);word-break:break-all;flex:1}
+.copy{background:var(--mat-hi);border:none;color:var(--ink);font:600 13px/1 inherit;padding:8px 12px;border-radius:100px;cursor:pointer;flex:0 0 auto}
+.copy:active{transform:scale(.95)}
+.sheet .close{width:100%;margin-top:16px;background:var(--mat-hi);border:none;color:var(--ink);font:600 16px/1 inherit;padding:14px;border-radius:14px;cursor:pointer}
+.sheet .close:active{transform:scale(.98);transition:transform .1s}
+@media (prefers-reduced-transparency: reduce){.pill,.seg,.ptz,.gear,.chip{background:#131417;backdrop-filter:none}.vtag,.startcam,.sheet,.scrim{backdrop-filter:none}.sheet{background:#1c1c20}}
+@media (prefers-reduced-motion: reduce){.viewport video{transition:none}.sheet{transition:transform .2s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <h1><span class="bot" aria-hidden="true"></span>Health Care Bot</h1>
+    <span class="spacer"></span>
+    <span class="pill"><span class="pdot" id="pdot"></span><span id="statusText">연결 중</span></span>
+    <button class="gear" id="mobileBtn" aria-label="모바일 접속">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z"/></svg>
+    </button>
+    <button class="gear" id="gearBtn" aria-label="설정">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </header>
+
+  <main class="stage">
+    <div class="viewport" id="v1">
+      <img class="feed hide" id="mjpeg" alt="robot live" />
+      <video id="cam" class="hide" playsinline muted></video>
+      <div class="vgrad"></div>
+      <div class="vhud"><div class="reticle" id="reticle"></div></div>
+      <div class="vtag" id="vtag">CAM · 자동 추적</div>
+      <div class="hudb">
+        <div class="ring">
+          <svg width="96" height="96" viewBox="0 0 112 112"><circle cx="56" cy="56" r="48" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="11"/><circle id="prog" cx="56" cy="56" r="48" fill="none" stroke="url(#g)" stroke-width="11" stroke-linecap="round" stroke-dasharray="301.6" stroke-dashoffset="301.6"/><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#30d158"/><stop offset="1" stop-color="#a6f24e"/></linearGradient></defs></svg>
+          <div class="mid"><b id="repNum">0</b><small id="repGoal">/ 20</small></div>
+        </div>
+        <div class="hudinfo">
+          <div class="ex">현재 운동</div>
+          <div class="big" id="exBig">—</div>
+          <div class="fb" id="fb">로봇에 연결하는 중…</div>
+        </div>
+      </div>
+      <button class="startcam" id="camBtn" hidden><span>📷</span>카메라 켜기</button>
+    </div>
+
+    <div class="dock">
+      <div class="seg" id="segEx" role="group" aria-label="운동 모드">
+        <span class="knob" id="knobEx"></span>
+        <button data-ex="squat" aria-pressed="true">스쿼트</button>
+        <button data-ex="overhead" aria-pressed="false">숄더프레스</button>
+        <button data-ex="lateral" aria-pressed="false">레터럴</button>
+      </div>
+
+      <section class="ptz hide" id="guardCapturesPanel">
+        <div class="hd"><h2>최근 촬영</h2><span class="lk" id="capCount">—</span></div>
+        <div class="capStrip" id="capStrip"><span class="capEmpty">아직 촬영 없음</span></div>
+      </section>
+
+      <section class="ptz" id="v3">
+        <div class="hd"><h2>카메라 · PTZ</h2><span class="lk" id="trk">—</span></div>
+        <div class="seg" id="segPtz" role="group" aria-label="카메라 제어 모드">
+          <span class="knob" id="knobPtz"></span>
+          <button data-ptz="auto" aria-pressed="true">자동 추적</button>
+          <button data-ptz="manual" aria-pressed="false">직접 조작</button>
+        </div>
+        <div class="telem" id="telem">
+          <div class="chips">
+            <div class="chip"><b id="tFps">—</b><span>FPS</span></div>
+            <div class="chip"><b id="tLoop">—</b><span>추론 ms</span></div>
+            <div class="chip"><b id="tTemp">—</b><span>CPU °C</span></div>
+            <div class="chip"><b id="tRam">—</b><span>RAM MB</span></div>
+          </div>
+          <div class="cpurow"><span class="ct">CPU <b id="tCpuTxt">—%</b></span><div class="track"><i id="tCpuBar"></i></div></div>
+        </div>
+        <div id="joy" class="hide">
+          <div class="pad" id="pad"><div class="cross"></div><div class="aim" id="aim" role="slider" aria-label="카메라 방향" tabindex="0"></div></div>
+          <div class="readout"><span>PAN<b id="pan">0.0°</b></span><span>TILT<b id="tilt">0.0°</b></span></div>
+          <p class="jhint">기울인 방향으로 카메라가 움직입니다 · 놓으면 정지</p>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="sheet" id="settingsSheet" role="dialog" aria-modal="true" aria-label="설정">
+  <div class="grab"></div>
+  <h3>설정</h3>
+  <p class="sub">로봇 동작 모드를 선택하세요.</p>
+  <div class="seg" id="segRobotMode" role="group" aria-label="로봇 모드" style="margin-top:18px">
+    <span class="knob" id="knobRobotMode"></span>
+    <button data-robot="workout" aria-pressed="true">운동 모드</button>
+    <button data-robot="guard" aria-pressed="false">경비 모드</button>
+  </div>
+  <p class="sub" id="guardHint" style="margin-top:10px">경비 모드는 운동이 아니라, 평소엔 홈 자세로 대기하다가 사람이 나타나면 추적하며 자동으로 사진을 찍어 기록합니다. 10초 이상 사람이 안 보이면 다시 홈으로 돌아갑니다.</p>
+  <button class="close" id="closeSettingsBtn">닫기</button>
+</div>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="모바일 접속">
+  <div class="grab"></div>
+  <h3>모바일 접속</h3>
+  <p class="sub">폰 카메라로 QR을 스캔하면 이 화면이 열립니다.</p>
+  <div class="qrwrap" id="qrwrap"></div>
+  <div class="urlbox"><code id="urlText">—</code><button class="copy" id="copyBtn">복사</button></div>
+  <button class="close" id="closeBtn">닫기</button>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="촬영 사진 크게 보기">
+  <img id="lightboxImg" src="" alt="촬영 사진">
+  <time id="lightboxTime"></time>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const API = `${location.protocol}//${location.hostname}:8080`;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const clientId = "hcb-demo";   // SHARED — anyone at the demo drives (last command wins)
+
+  class Spring{
+    constructor(v,onframe){this.x=v;this.v=0;this.target=v;this.onframe=onframe;this.k=0;this.c=0;this.running=false;}
+    config(response,bounce){const w=2*Math.PI/response,z=Math.max(0.05,1-bounce);this.k=w*w;this.c=2*z*w;return this;}
+    to(target,o){o=o||{};this.target=target;if(o.velocity!=null)this.v=o.velocity;if(reduceMotion){this.x=target;this.v=0;this.onframe(this.x,this.v);return;}if(!this.running){this.running=true;this.last=null;requestAnimationFrame(t=>this.step(t));}}
+    set(v){this.x=v;this.v=0;this.onframe(this.x,this.v);}
+    step(t){if(this.last==null)this.last=t;let dt=Math.min(0.032,(t-this.last)/1000);this.last=t;const n=3;dt/=n;for(let i=0;i<n;i++){const a=-this.k*(this.x-this.target)-this.c*this.v;this.v+=a*dt;this.x+=this.v*dt;}this.onframe(this.x,this.v);if(Math.abs(this.x-this.target)<0.001&&Math.abs(this.v)<0.02){this.x=this.target;this.v=0;this.onframe(this.x,this.v);this.running=false;return;}requestAnimationFrame(t2=>this.step(t2));}
+  }
+
+  /* ============================================================
+     자체 내장 QR 코드 생성기 - 외부 CDN 의존 없음(로봇 Wi-Fi에 인터넷이
+     없을 수 있어 필수). 접속 URL이 IP 바뀔 때마다 달라지므로 정적 이미지로
+     박아두면 안 되고, 항상 location에서 다시 계산해 그 자리에서 인코딩한다.
+     범위를 버전 1~4 · ECC 레벨 M · 마스크 0 고정으로 좁혀 구현을 단순화했다
+     (로컬 URL은 짧아 v4=최대 62바이트로 충분, 버전<7이라 버전정보 블록도
+     불필요 - 표준 QR 스펙의 일부만 구현).
+     ============================================================ */
+  function qrSvg(text){
+    const EXP=new Array(512), LOG=new Array(256);
+    { let x=1; for(let i=0;i<255;i++){ EXP[i]=x; LOG[x]=i; x<<=1; if(x&0x100) x^=0x11d; } for(let i=255;i<512;i++) EXP[i]=EXP[i-255]; }
+    const gmul=(a,b)=> (a===0||b===0) ? 0 : EXP[LOG[a]+LOG[b]];
+    function rsGenPoly(eccCount){
+      let poly=[1];
+      for(let i=0;i<eccCount;i++){
+        const factor=[1,EXP[i]];
+        const res=new Array(poly.length+1).fill(0);
+        for(let a=0;a<poly.length;a++) for(let b=0;b<factor.length;b++) res[a+b]^=gmul(poly[a],factor[b]);
+        poly=res;
+      }
+      return poly;
+    }
+    function rsEncode(dataBytes,eccCount){
+      const gen=rsGenPoly(eccCount);
+      const buf=dataBytes.concat(new Array(eccCount).fill(0));
+      for(let i=0;i<dataBytes.length;i++){
+        const coef=buf[i];
+        if(coef!==0) for(let j=0;j<gen.length;j++) buf[i+j]^=gmul(gen[j],coef);
+      }
+      return buf.slice(dataBytes.length);
+    }
+    // 버전1~4, ECC-M: {총 코드워드, 데이터 코드워드, 모듈 한 변 크기, 정렬패턴 중심좌표}
+    const VT=[{total:26,data:16,size:21,align:null},{total:44,data:28,size:25,align:18},
+              {total:70,data:44,size:29,align:22},{total:100,data:64,size:33,align:26}];
+    const bytes=[]; for(let i=0;i<text.length;i++) bytes.push(text.charCodeAt(i)&0xff);
+    let vi=VT.length-1;
+    for(let i=0;i<VT.length;i++){ if(bytes.length*8<=VT[i].data*8-12){ vi=i; break; } }
+    const v=VT[vi], N=v.size, typeNumber=vi+1;
+    // 데이터 비트스트림 (바이트 모드) 인코딩 + 패딩
+    const bits=[];
+    const push=(val,len)=>{ for(let i=len-1;i>=0;i--) bits.push((val>>i)&1); };
+    push(0b0100,4); push(bytes.length,8); bytes.forEach(b=>push(b,8));
+    const totalBits=v.data*8;
+    for(let i=0;i<4 && bits.length<totalBits;i++) bits.push(0);
+    while(bits.length%8!==0) bits.push(0);
+    const padBytes=[0xEC,0x11]; let pi=0;
+    while(bits.length<totalBits){ push(padBytes[pi%2],8); pi++; }
+    const dataCodewords=[];
+    for(let i=0;i<bits.length;i+=8){ let val=0; for(let j=0;j<8;j++) val=(val<<1)|bits[i+j]; dataCodewords.push(val); }
+    const eccCount=v.total-v.data;
+    const eccCodewords=rsEncode(dataCodewords,eccCount);
+    const full=dataCodewords.concat(eccCodewords);
+
+    const mat=Array.from({length:N},()=>new Array(N).fill(0));
+    const isFunc=Array.from({length:N},()=>new Array(N).fill(false));
+    function setFinder(row,col){
+      for(let r=-1;r<=7;r++) for(let c=-1;c<=7;c++){
+        const rr=row+r, cc=col+c;
+        if(rr<0||cc<0||rr>=N||cc>=N) continue;
+        isFunc[rr][cc]=true;
+        let dark=false;
+        if(r>=0&&r<=6&&c>=0&&c<=6) dark=(r===0||r===6||c===0||c===6)||(r>=2&&r<=4&&c>=2&&c<=4);
+        mat[rr][cc]=dark?1:0;
+      }
+    }
+    setFinder(0,0); setFinder(0,N-7); setFinder(N-7,0);
+    for(let i=8;i<N-8;i++){
+      if(!isFunc[6][i]){ isFunc[6][i]=true; mat[6][i]=(i%2===0)?1:0; }
+      if(!isFunc[i][6]){ isFunc[i][6]=true; mat[i][6]=(i%2===0)?1:0; }
+    }
+    if(v.align){
+      const ac=v.align;
+      for(let r=-2;r<=2;r++) for(let c=-2;c<=2;c++){
+        const rr=ac+r, cc=ac+c;
+        isFunc[rr][cc]=true;
+        mat[rr][cc]=(Math.abs(r)===2||Math.abs(c)===2||(r===0&&c===0))?1:0;
+      }
+    }
+    const dmR=4*typeNumber+9, dmC=8;
+    isFunc[dmR][dmC]=true; mat[dmR][dmC]=1;
+    for(let i=0;i<9;i++) isFunc[8][i]=true;
+    for(let i=0;i<8;i++) isFunc[i][8]=true;
+    for(let i=0;i<8;i++) isFunc[8][N-1-i]=true;
+    for(let i=0;i<7;i++) isFunc[N-1-i][8]=true;
+
+    const dbits=[]; full.forEach(b=>{ for(let i=7;i>=0;i--) dbits.push((b>>i)&1); });
+    let bitIdx=0, dir=-1, col=N-1;
+    while(col>0){
+      if(col===6) col--;
+      for(let count=0;count<N;count++){
+        const row = dir<0 ? N-1-count : count;
+        for(let cc=0;cc<2;cc++){
+          const c=col-cc;
+          if(!isFunc[row][c]){
+            const bit = bitIdx<dbits.length ? dbits[bitIdx++] : 0;
+            mat[row][c] = ((row+c)%2===0) ? (bit^1) : bit;   // 마스크 0 고정
+          }
+        }
+      }
+      dir=-dir; col-=2;
+    }
+
+    // 포맷 정보 (ECC=M→00, 마스크=000 → data=00000), BCH(15,5) generator 0x537, mask 0x5412
+    function bitLen(x){ let l=0; while(x){ l++; x>>>=1; } return l; }
+    const G15=0x537, fdata=0b00000;
+    let rem=fdata<<10; const gBits=bitLen(G15);
+    while(bitLen(rem)>=gBits) rem ^= (G15 << (bitLen(rem)-gBits));
+    const format=((fdata<<10)|rem)^0x5412;
+    const getBit=i=>(format>>i)&1;
+    for(let k=0;k<6;k++) mat[8][k]=getBit(14-k);
+    mat[8][7]=getBit(8); mat[8][8]=getBit(7); mat[7][8]=getBit(6);
+    for(let j=0;j<=5;j++) mat[j][8]=getBit(j);
+    for(let k=0;k<7;k++) mat[N-1-k][8]=getBit(k);
+    for(let k=0;k<8;k++) mat[8][N-8+k]=getBit(7+k);
+
+    const cell=4;
+    let svg=`<svg viewBox="0 0 ${N*cell} ${N*cell}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#fff"/>`;
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++) if(mat[r][c]) svg+=`<rect x="${c*cell}" y="${r*cell}" width="${cell}" height="${cell}" fill="#0b0b0d"/>`;
+    svg+=`</svg>`;
+    return svg;
+  }
+
+  let LIVE=false, demoStarted=false, failStreak=0, hasCtrl=false, hbTimer=null;
+  const video=$("#cam"), mjpeg=$("#mjpeg"), camBtn=$("#camBtn"), reticle=$("#reticle"), viewport=$("#v1");
+
+  async function post(path, body){
+    try{
+      const r = await fetch(API+path, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.assign({client_id:clientId}, body||{}))});
+      return await r.json();
+    }catch(e){ return {ok:false}; }
+  }
+  async function ensureControl(){
+    if(!LIVE) return true;
+    if(hasCtrl) return true;
+    const r = await post("/api/control/claim",{pin:"1234"});
+    if(r && r.ok){ hasCtrl=true; if(!hbTimer) hbTimer=setInterval(()=>post("/api/control/heartbeat"),30000); return true; }
+    return false;
+  }
+
+  addEventListener("load",()=>{resizeKnobs();poll();});
+
+  /* ring + reps */
+  const C=2*Math.PI*48, prog=$("#prog"), repNum=$("#repNum");
+  const ringSpring=new Spring(0,p=>{prog.style.strokeDashoffset=C*(1-Math.max(0,Math.min(1,p)));}).config(0.5,0.15);
+  const numSpring=new Spring(1,s=>{repNum.style.transform=`scale(${s})`;}).config(0.35,0.4);
+  let reps=0, goal=20;
+  function setReps(v,g){ if(g){goal=g;$("#repGoal").textContent="/ "+g;} if(v!==reps){const up=v>reps;reps=v;repNum.textContent=v;ringSpring.to(goal?v/goal:0);if(up){numSpring.set(1.18);numSpring.to(1);if(navigator.vibrate&&!reduceMotion)navigator.vibrate(9);}} }
+  // 경비 모드는 reps/goal 개념이 없어 별도 렌더링 - 링은 무장까지 진행률, 숫자는 촬영 수.
+  // repNum/ringSpring을 setReps()와 공유하므로, 여기서도 반드시 `reps` 변수를 갱신해야
+  // 한다 - 안 그러면 setReps()의 변경 감지(v!==reps)가 낡은 값과 비교하게 돼, 경비
+  // 모드에서 운동 모드로 돌아왔을 때 숫자가 안 바뀐 것처럼 보이는 버그가 생긴다.
+  function paintGuardRing(g){
+    const armed=!!g.armed;
+    if(armed){
+      // 무장 후: 큰 숫자 = 촬영 매수, 링 = 꽉 참
+      ringSpring.to(1);
+      const v=g.capture_count|0;
+      if(v!==reps){
+        const up=v>reps; reps=v; repNum.textContent=v;
+        if(up){ numSpring.set(1.18); numSpring.to(1); if(navigator.vibrate&&!reduceMotion)navigator.vibrate(9); }
+      }
+      $("#repGoal").textContent="촬영됨";
+    }else{
+      // 무장 전: 큰 숫자 = 무장까지 남은 초 (아래 안내문구 "N초 뒤 무장됩니다"랑
+      // 반드시 같은 숫자를 보여줘야 한다 - 예전엔 여기서 촬영 매수를 그대로 보여줘서
+      // "18 / 무장 중"처럼 안내문구랑 안 맞는 숫자가 같이 떠 헷갈렸음).
+      const remainS=Math.max(0,Math.ceil((g.arm_remaining_ms||0)/1000));
+      ringSpring.to(Math.max(0,1-(g.arm_remaining_ms||0)/GUARD_ARM_DELAY_MS));
+      if(remainS!==reps){ reps=remainS; repNum.textContent=remainS; }
+      $("#repGoal").textContent="무장까지";
+    }
+  }
+
+  /* 경비 모드 최근 촬영 썸네일 - capture_count가 바뀔 때만 다시 불러온다
+     (매 폴링(500ms)마다 목록을 새로 받을 필요 없음). */
+  const guardCapturesPanel=$("#guardCapturesPanel"), capStrip=$("#capStrip"), capCountEl=$("#capCount");
+  let lastCapCount=-1;
+  async function refreshCaptures(){
+    try{
+      const r=await fetch(`${API}/api/guard/captures`,{cache:"no-store"});
+      const d=await r.json();
+      const caps=(d&&d.captures)||[];
+      capStrip.innerHTML = caps.length ? caps.map(c=>{
+        const t=(c.time||"").split(" ")[1]||"";
+        return `<div class="capThumb" role="button" tabindex="0" data-file="${encodeURIComponent(c.file)}" data-time="${t}"><img src="${API}/captures/${encodeURIComponent(c.file)}" loading="lazy" alt="capture"><time>${t}</time></div>`;
+      }).join("") : '<span class="capEmpty">아직 촬영 없음</span>';
+    }catch(e){}
+  }
+  function syncGuardCaptures(guard){
+    const v=(guard&&guard.capture_count)|0;
+    capCountEl.textContent=v+"장";
+    if(v!==lastCapCount){ lastCapCount=v; refreshCaptures(); }
+  }
+
+  /* segmented factory */
+  function makeSeg(segEl, knobEl, onPick){
+    const btns=[...segEl.querySelectorAll("button")];
+    const sp=new Spring(0,x=>{knobEl.style.transform=`translateX(${x}px)`;}).config(0.35,0.28);
+    function layout(){const a=segEl.querySelector('[aria-pressed="true"]')||btns[0];knobEl.style.width=a.offsetWidth+"px";sp.set(a.offsetLeft-4);}
+    function select(key,fromUser){
+      const b=btns.find(x=>Object.values(x.dataset)[0]===key)||btns[0];
+      if(b.disabled) return;
+      const cur=segEl.querySelector('[aria-pressed="true"]');
+      if(cur!==b){btns.forEach(x=>x.setAttribute("aria-pressed","false"));b.setAttribute("aria-pressed","true");knobEl.style.width=b.offsetWidth+"px";sp.to(b.offsetLeft-4);}
+      if(fromUser){ if(navigator.vibrate&&!reduceMotion)navigator.vibrate(6); onPick&&onPick(key); }
+    }
+    btns.forEach(b=>b.addEventListener("click",()=>select(Object.values(b.dataset)[0],true)));
+    return {select, layout, key:()=>{const a=segEl.querySelector('[aria-pressed="true"]');return a?Object.values(a.dataset)[0]:(btns[0]&&Object.values(btns[0].dataset)[0]);}};
+  }
+  const exBig=$("#exBig");
+  const EX_LABEL={squat:"스쿼트",overhead:"숄더프레스 (팔 위로)",lateral:"사이드 레터럴 레이즈",guard:"경비 모드"};
+  const GUARD_ARM_DELAY_MS=5000; // src/app_state.py GUARD_ARM_DELAY_MS와 일치시킬 것
+  let lastExerciseMode="squat";  // 경비 모드에서 '운동 모드'로 되돌아갈 때 복원할 직전 종목
+  let pendingMode=null, pendingModeT=0;
+  const segEx=makeSeg($("#segEx"),$("#knobEx"), key=>{ pendingMode=key; pendingModeT=performance.now(); lastExerciseMode=key; exBig.textContent=EX_LABEL[key]||EX_LABEL.squat; ensureControl().then(ok=>{ if(ok&&LIVE) post("/api/mode",{mode:key}); }); });
+  let pendingPtz=null, pendingPtzT=0;
+  const segPtz=makeSeg($("#segPtz"),$("#knobPtz"), key=>{ pendingPtz=key; pendingPtzT=performance.now(); applyPtzPanel(key); ensureControl().then(ok=>{ if(ok&&LIVE) post("/api/ptz",{command:"auto_track",enabled:key==="auto"}); }); });
+  function applyPtzPanel(key){ const manual=key==="manual"; $("#telem").classList.toggle("hide",manual); $("#joy").classList.toggle("hide",!manual); }
+
+  /* 로봇 모드(운동 ↔ 경비) - 설정 시트 안 세그먼트. 경비는 운동이 아니므로
+     여기서 완전히 분리해 관리한다 (하단 종목 세그먼트는 운동 모드에서만 보임). */
+  const segExWrap=$("#segEx");
+  let pendingRobot=null, pendingRobotT=0;
+  const segRobotMode=makeSeg($("#segRobotMode"),$("#knobRobotMode"), key=>{
+    pendingRobot=key; pendingRobotT=performance.now();
+    ensureControl().then(ok=>{ if(ok&&LIVE) post("/api/mode",{mode:key==="guard"?"guard":lastExerciseMode}); });
+  });
+
+  function resizeKnobs(){ segEx.layout(); segPtz.layout(); segRobotMode.layout(); }
+  addEventListener("resize",resizeKnobs);
+
+  /* reticle */
+  let rx=0, ry=0;
+  const paintRet=()=>{ reticle.style.transform=`translate(${rx}px,${ry}px)`; };
+  const retX=new Spring(0,v=>{rx=v;paintRet();}).config(0.5,0.12);
+  const retY=new Spring(0,v=>{ry=v;paintRet();}).config(0.5,0.12);
+
+  /* feedback */
+  const fb=$("#fb");
+  function setFeed(html){ if(fb.dataset.cur===html)return; fb.dataset.cur=html; fb.style.opacity=0; setTimeout(()=>{fb.innerHTML=html;fb.style.opacity=1;},300); }
+  function deriveFeedback(d){
+    const p=d.ptz||{}, ex=d.exercise_active, a=(d.angle_deg||{}).used, ses=(d.app&&d.app.session)||{};
+    const st=((d[ex]||{}).state||"").toUpperCase(), up=st.includes("UP"), down=st.includes("DOWN");
+    if(ex==="guard"){
+      const g=(d.app&&d.app.guard)||{};
+      if(!g.armed)return `<b>${Math.ceil((g.arm_remaining_ms||0)/1000)}초</b> 뒤 무장됩니다…`;
+      return "감시 중입니다. 사람이 감지되면 <b>자동으로 촬영</b>합니다.";
+    }
+    if(p.state==="lost")return "사람을 <b>찾는 중</b>입니다…";
+    if(p.state==="edge")return "프레임 가장자리 — <b>따라갑니다</b>.";
+    if(ses.status==="idle")return "준비되면 시작하세요. 로봇이 <b>지켜봅니다</b>.";
+    if(ex==="squat")return down?((a&&a<100)?"<b>좋은 깊이</b>입니다. 올라오세요.":"조금 더 <b>깊이</b> 앉아보세요."):"무릎·발끝 정렬 <b>안정적</b>입니다.";
+    if(ex==="overhead")return up?"팔을 <b>끝까지</b> 펴세요. 좋습니다!":"팔을 <b>머리 위로</b> 곧게 올리세요.";
+    if(ex==="lateral")return up?"어깨 높이까지 <b>수평</b>으로. 좋아요!":"팔을 <b>옆으로</b> 어깨 높이까지.";
+    return "자세를 <b>인식하고</b> 있습니다…";
+  }
+
+  /* joystick — drives real servos in live (shared control) */
+  const aim=$("#aim"), R=54; let ax=0, ay=0;
+  const paintAim=()=>{ aim.style.transform=`translate(${ax}px,${ay}px)`; if(!LIVE) video.style.transform=`scaleX(-1) translate(${-ax*0.06}px,${-ay*0.06}px) scale(1.06)`; };
+  const sx=new Spring(0,v=>{ax=v;paintAim();}), sy=new Spring(0,v=>{ay=v;paintAim();});
+  function rubber(o,dim,c){dim=dim||R;c=c||0.55;return (o*dim*c)/(dim+c*Math.abs(o));}
+  function clampRubber(x,y){const d=Math.hypot(x,y);if(d<=R)return[x,y];const o=d-R,e=R+rubber(o);return[x/d*e,y/d*e];}
+  let dragging=false,grabX=0,grabY=0,hist=[];
+  aim.addEventListener("pointerdown",e=>{dragging=true;aim.setPointerCapture(e.pointerId);sx.running=sy.running=false;grabX=e.clientX-ax;grabY=e.clientY-ay;hist=[{x:ax,y:ay,t:e.timeStamp}];e.preventDefault();});
+  aim.addEventListener("pointermove",e=>{if(!dragging)return;const[nx,ny]=clampRubber(e.clientX-grabX,e.clientY-grabY);ax=nx;ay=ny;paintAim();hist.push({x:ax,y:ay,t:e.timeStamp});if(hist.length>6)hist.shift();});
+  function release(){if(!dragging)return;dragging=false;const a=hist[0],b=hist[hist.length-1],dt=Math.max(1,(b.t-a.t))/1000;const vx=(b.x-a.x)/dt,vy=(b.y-a.y)/dt,sp=Math.hypot(vx,vy);const bo=sp>900?0.35:sp>300?0.2:0;sx.config(0.38,bo).to(0,{velocity:vx});sy.config(0.38,bo).to(0,{velocity:vy});if(navigator.vibrate&&!reduceMotion)navigator.vibrate(5);}
+  aim.addEventListener("pointerup",release); aim.addEventListener("pointercancel",release);
+  aim.addEventListener("keydown",e=>{const s=12;let h=true;if(e.key==="ArrowLeft"){ax=Math.max(-R,ax-s);drive(-1,0);}else if(e.key==="ArrowRight"){ax=Math.min(R,ax+s);drive(1,0);}else if(e.key==="ArrowUp"){ay=Math.max(-R,ay-s);drive(0,-1);}else if(e.key==="ArrowDown"){ay=Math.min(R,ay+s);drive(0,1);}else h=false;if(h){paintAim();e.preventDefault();setTimeout(()=>{sx.config(.35,0).to(0);sy.config(.35,0).to(0);},180);}});
+  function drive(dx,dy){ if(!LIVE)return; ensureControl().then(ok=>{ if(!ok)return; if(dx)post("/api/ptz",{command:"pan",delta_deg:dx*6}); if(dy)post("/api/ptz",{command:"tilt",delta_deg:dy*6}); }); }
+  setInterval(()=>{
+    if(!LIVE || segPtz.key()!=="manual" || !dragging) return;
+    const dz=0.16, nx=ax/R, ny=ay/R;
+    if(Math.abs(nx)>dz || Math.abs(ny)>dz){
+      ensureControl().then(ok=>{ if(!ok)return;
+        if(Math.abs(nx)>dz) post("/api/ptz",{command:"pan",delta_deg:+Math.max(-8,Math.min(8,nx*8)).toFixed(1)});
+        if(Math.abs(ny)>dz) post("/api/ptz",{command:"tilt",delta_deg:+Math.max(-8,Math.min(8,ny*8)).toFixed(1)});
+      });
+    }
+  }, 220);
+
+  /* telemetry */
+  function setTelem(fps,loop,temp,ram,cpu){
+    $("#tFps").textContent = fps!=null?fps.toFixed(1):"—";
+    $("#tLoop").textContent= loop!=null?Math.round(loop):"—";
+    $("#tTemp").textContent= temp!=null?Math.round(temp):"—";
+    $("#tRam").textContent = ram!=null?Math.round(ram):"—";
+    const c = cpu!=null?Math.max(0,Math.min(100,cpu)):null;
+    $("#tCpuTxt").textContent = c!=null?Math.round(c)+"%":"—%";
+    $("#tCpuBar").style.width = (c!=null?c:0)+"%";
+  }
+
+  /* LIVE */
+  function enterLive(){
+    LIVE=true; camBtn.hidden=true;
+    try{ if(video.srcObject){video.srcObject.getTracks().forEach(t=>t.stop());video.srcObject=null;} }catch(e){}
+    video.classList.add("hide"); mjpeg.src=`${API}/stream.mjpg`; mjpeg.classList.remove("hide");
+    $("#pdot").classList.remove("sim"); $("#statusText").textContent="Live · Robot"; $("#vtag").textContent="ROBOT CAM · 실시간";
+    ensureControl();
+  }
+  function onLive(d){
+    if(!LIVE) enterLive();
+    try{
+      const ptz=d.ptz||{}, ses=(d.app&&d.app.session)||{};
+      const pc=d.person_center_norm||[], w=viewport.clientWidth, h=viewport.clientHeight;
+      if(pc[0]!=null&&pc[1]!=null&&w&&h){ retX.to((pc[0]-0.5)*w); retY.to((pc[1]-0.42)*h); }
+      let mode=(ses.mode==="overhead"||ses.mode==="lateral"||ses.mode==="guard")?ses.mode:"squat";
+      if(pendingMode && performance.now()-pendingModeT<1500) mode=pendingMode; else pendingMode=null;
+      const robotPending = pendingRobot && performance.now()-pendingRobotT<1500;
+      const robotKey = robotPending ? pendingRobot : (mode==="guard"?"guard":"workout");
+      if(!robotPending) pendingRobot=null;
+      segRobotMode.select(robotKey,false);
+      const isGuard = robotKey==="guard";
+      segExWrap.classList.toggle("hide", isGuard);
+      guardCapturesPanel.classList.toggle("hide", !isGuard);
+      if(isGuard){
+        exBig.textContent=EX_LABEL.guard;
+        paintGuardRing((d.app&&d.app.guard)||{});
+        syncGuardCaptures((d.app&&d.app.guard)||{});
+      }else{
+        segEx.select(mode,false);
+        lastExerciseMode=mode;
+        exBig.textContent=EX_LABEL[mode];
+        setReps(((d[mode]||{}).reps)|0, ses.target_reps||20);
+      }
+      let pk=ptz.auto_track_enabled?"auto":"manual";
+      if(pendingPtz && performance.now()-pendingPtzT<2000) pk=pendingPtz; else pendingPtz=null;
+      segPtz.select(pk,false); applyPtzPanel(pk);
+      $("#trk").textContent = ptz.auto_track_enabled ? (ptz.state||"LOCK").toUpperCase() : "MANUAL";
+      const panRel=(ptz.pan_deg!=null?ptz.pan_deg-180:0), tiltRel=(ptz.tilt_deg!=null?ptz.tilt_deg-180:0);
+      $("#pan").textContent=panRel.toFixed(1)+"°"; $("#tilt").textContent=tiltRel.toFixed(1)+"°";
+      setTelem(d.fps, d.loop_ms, d.cpu_temp_c, d.rss_mb, d.cpu_percent);
+      setFeed(deriveFeedback(d));
+    }catch(err){ /* one bad frame must never freeze the live loop */ }
+  }
+
+  /* 촬영 썸네일 클릭 → 크게 보기 (이벤트 위임 - 목록이 매번 다시 그려지므로) */
+  const lightbox=$("#lightbox"), lightboxImg=$("#lightboxImg"), lightboxTime=$("#lightboxTime");
+  function openLightbox(file,time){
+    lightboxImg.src=`${API}/captures/${file}`;
+    lightboxTime.textContent=time||"";
+    lightbox.classList.add("open");
+  }
+  function closeLightbox(){ lightbox.classList.remove("open"); lightboxImg.src=""; }
+  capStrip.addEventListener("click",e=>{
+    const t=e.target.closest(".capThumb");
+    if(t) openLightbox(t.dataset.file,t.dataset.time);
+  });
+  capStrip.addEventListener("keydown",e=>{
+    if(e.key!=="Enter"&&e.key!==" ")return;
+    const t=e.target.closest(".capThumb");
+    if(t){ e.preventDefault(); openLightbox(t.dataset.file,t.dataset.time); }
+  });
+  lightbox.addEventListener("click",closeLightbox);
+  addEventListener("keydown",e=>{if(e.key==="Escape")closeLightbox();});
+
+  /* DEMO (no robot) */
+  async function startCam(){ try{const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});video.srcObject=s;await video.play();video.classList.remove("hide");camBtn.hidden=true;}catch(e){camBtn.hidden=false;camBtn.querySelector("span").textContent="🚫";camBtn.childNodes[1].textContent="카메라 권한 필요 · 눌러서 다시 시도";} }
+  camBtn.addEventListener("click",startCam);
+  function startDemo(){
+    if(demoStarted||LIVE)return; demoStarted=true;
+    $("#pdot").classList.add("sim"); $("#statusText").textContent="Demo"; $("#vtag").textContent="로컬 카메라 · 데모";
+    segEx.select("squat",false); exBig.textContent="스쿼트"; startCam();
+    let t0=performance.now();
+    setInterval(()=>{ if(LIVE)return; setReps(reps>=goal?8:reps+1,20);
+      const t=performance.now()-t0; setTelem(10.8+Math.sin(t/2200)*1.4, 92+Math.sin(t/2000)*8, 58+Math.sin(t/7000)*3, 412+Math.sin(t/9000)*8, 83+Math.sin(t/5000)*6);
+    },2200);
+    setTelem(10.8,92,58,412,83);
+    const feeds=["무릎·발끝 정렬 <b>안정적</b>입니다.","허리 중립 — <b>깊이가 좋습니다</b>.","상체가 앞으로 쏠려요. <b>가슴을 펴세요</b>.","일정한 템포 — <b>호흡을 유지</b>하세요."];
+    let fi=0; setInterval(()=>{ if(LIVE)return; fi=(fi+1)%feeds.length; setFeed(feeds[fi]); },4200); setFeed(feeds[0]);
+  }
+
+  /* poll */
+  async function poll(){
+    try{ const r=await fetch(`${API}/stats.json`,{cache:"no-store"}); if(!r.ok)throw 0; onLive(await r.json()); failStreak=0; }
+    catch(e){ failStreak++; if(!LIVE&&!demoStarted&&failStreak>=3) startDemo(); }
+    setTimeout(poll,500);
+  }
+
+  /* settings + QR - IP가 바뀔 수 있으니 정적 이미지가 아니라 매번 현재
+     location으로 그 자리에서 인코딩한다 (예전엔 정적 SVG라 IP 바뀌면
+     낡은 QR을 계속 보여주는 버그가 있었음). */
+  const mobileUrl = location.origin + location.pathname;
+  try{ $("#qrwrap").innerHTML = qrSvg(mobileUrl); }
+  catch(e){ $("#qrwrap").innerHTML = '<p style="color:#000;font-size:12px;padding:20px;text-align:center">QR 생성 실패 - 아래 주소를 직접 입력하세요</p>'; }
+  $("#urlText").textContent = mobileUrl;
+  // 시트 두 개(모바일 접속 / 설정)가 스크림 하나를 공유 - 동시에 열리는 경우가
+  // 없으므로 "지금 열린 시트"만 추적하면 충분하다.
+  const scrim=$("#scrim"), mobileSheet=$("#sheet"), settingsSheet=$("#settingsSheet");
+  let openSheetEl=null;
+  const openSheet=(el)=>{ openSheetEl=el; scrim.classList.add("open"); el.classList.add("open"); };
+  const closeSheet=()=>{ scrim.classList.remove("open"); if(openSheetEl) openSheetEl.classList.remove("open"); openSheetEl=null; };
+  $("#mobileBtn").addEventListener("click",()=>openSheet(mobileSheet));
+  $("#gearBtn").addEventListener("click",()=>openSheet(settingsSheet));
+  $("#closeBtn").addEventListener("click",closeSheet);
+  $("#closeSettingsBtn").addEventListener("click",closeSheet);
+  scrim.addEventListener("click",closeSheet);
+  addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
+  $("#copyBtn").addEventListener("click",async()=>{ try{await navigator.clipboard.writeText(mobileUrl);$("#copyBtn").textContent="복사됨";setTimeout(()=>$("#copyBtn").textContent="복사",1400);}catch(e){} });
+})();
+</script>
+</body>
+</html>

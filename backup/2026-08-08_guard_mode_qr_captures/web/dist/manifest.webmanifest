@@ -1,0 +1,14 @@
+{
+  "name": "Health Care Bot Live",
+  "short_name": "Bot Live",
+  "description": "UNO Q Health Care Bot 실시간 대시보드",
+  "start_url": "/app",
+  "scope": "/app",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F7F8FA",
+  "theme_color": "#6F4DFF",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

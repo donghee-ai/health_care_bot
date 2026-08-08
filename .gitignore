@@ -16,6 +16,9 @@ docs/mentor/
 *.log
 logs/
 
+# 경비 모드 캡처 (사람 사진 + 로그) - 리포에 커밋하지 않는다
+captures/
+
 # OS / 편집기
 .DS_Store
 Thumbs.db

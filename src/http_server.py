@@ -21,6 +21,7 @@ from pathlib import Path
 import cv2
 
 import app_state
+from guard_capture import CAPTURE_DIR, LOG_PATH
 
 _state_lock = threading.Lock()
 _latest_jpg = None
@@ -98,6 +99,7 @@ def _full_stats():
     data["app"] = {
         "session": app_block,
         "control": control_block,
+        "guard": app_state.guard_snapshot(),
         "viewer_count": viewers,
     }
     if _ptz is not None:
@@ -173,6 +175,44 @@ def _send_json(handler, status: int, payload: dict):
     handler.wfile.write(data)
 
 
+def _guard_captures_list(limit: int = 12) -> list:
+    """guard_log.jsonl 마지막 N줄을 최신순으로 반환. 로그 없으면 빈 리스트."""
+    if not LOG_PATH.is_file():
+        return []
+    lines = LOG_PATH.read_text(encoding='utf-8').strip().splitlines()
+    out = []
+    for line in reversed(lines[-limit:]):
+        try:
+            out.append(json.loads(line))
+        except Exception:
+            continue
+    return out
+
+
+def _serve_capture(handler, url_path: str):
+    """`/captures/<file>`를 captures/ 디렉토리에서 서빙. 경로 탈출 차단."""
+    rel = url_path[len('/captures/'):].lstrip('/')
+    candidate = (CAPTURE_DIR / rel).resolve()
+    try:
+        candidate.relative_to(CAPTURE_DIR.resolve())
+    except ValueError:
+        handler.send_response(403)
+        handler.end_headers()
+        return
+    if not candidate.is_file():
+        handler.send_response(404)
+        handler.end_headers()
+        return
+    body = candidate.read_bytes()
+    handler.send_response(200)
+    handler.send_header('Content-Type', 'image/jpeg')
+    handler.send_header('Content-Length', str(len(body)))
+    handler.send_header('Cache-Control', 'no-store')
+    handler.send_header('Access-Control-Allow-Origin', '*')
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
 def _serve_static(handler, url_path: str):
     """`/app` 이하 경로를 web/dist에서 서빙. 없으면 index.html로 폴백 (SPA)."""
     rel = url_path[len('/app'):].lstrip('/')
@@ -224,6 +264,10 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             _send_json(self, 200, _full_stats())
         elif path == '/stream.mjpg':
             self._stream_mjpg()
+        elif path == '/api/guard/captures':
+            _send_json(self, 200, {"ok": True, "captures": _guard_captures_list()})
+        elif path.startswith('/captures/'):
+            _serve_capture(self, path)
         elif path == '/app' or path.startswith('/app/'):
             _serve_static(self, path)
         else:
@@ -294,6 +338,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
                 return
             mode = str(body.get('mode') or '')
             return _send_json(self, 200, app_state.set_mode(mode))
+
+        if path == '/api/guard/capture-now':
+            if not _require_control(self, body):
+                return
+            return _send_json(self, 200, app_state.guard_request_capture())
 
         if path == '/api/session/start':
             if not _require_control(self, body):

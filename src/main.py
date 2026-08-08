@@ -27,6 +27,7 @@ from exercise_counter import SquatCounter, OverheadPressCounter, LateralRaiseCou
 from ptz_controller import PTZController
 from http_server import update_live_state, start_server, init_app, viewer_count
 import app_state
+import guard_capture
 
 try:
     from ai_edge_litert import interpreter as tflite
@@ -150,8 +151,9 @@ class FrameGrabber:
 def parse_args():
     ap = argparse.ArgumentParser(description="UNO Q Health Care Bot")
     ap.add_argument("model", help="MoveNet Thunder INT8 TFLite 경로")
-    ap.add_argument("--mode", choices=["squat", "overhead", "lateral"], default="squat",
-                    help="운동 종목 (웹 UI에서 /api/mode로 실시간 변경). 정면 선택식 - 자동분류 없음")
+    ap.add_argument("--mode", choices=["squat", "overhead", "lateral", "guard"], default="squat",
+                    help="운동 종목 (웹 UI에서 /api/mode로 실시간 변경). 정면 선택식 - 자동분류 없음. "
+                         "guard = 경비 모드(운동과 무관, 전환 5초 뒤부터 사람 감지 시 촬영+로그)")
     ap.add_argument("--camera", type=int, default=0)
     ap.add_argument("--width", type=int, default=640)
     ap.add_argument("--height", type=int, default=480)
@@ -190,7 +192,8 @@ def parse_args():
     ap.add_argument("--both-knee-scale", type=float, default=0.5,
                     help="양 무릎 보일 때 추가 속도 배율")
     ap.add_argument("--yaw-sign", type=int, default=1, choices=[-1, 1])
-    ap.add_argument("--pitch-sign", type=int, default=1, choices=[-1, 1])
+    ap.add_argument("--pitch-sign", type=int, default=-1, choices=[-1, 1],
+                    help="2026-08-07 재조립 이후 -1이 기본(실측 확인됨). 재조립 전 방향이면 1")
 
     # HTTP
     ap.add_argument("--serve", type=int, default=0,
@@ -203,11 +206,14 @@ def parse_args():
 
 
 def select_counter(mode: str, squat_c, overhead_c, lateral_c):
-    """모드(웹 UI에서 선택)로 카운터를 고른다. 전부 정면 종목이라 자동분류 없음."""
+    """모드(웹 UI에서 선택)로 카운터를 고른다. 전부 정면 종목이라 자동분류 없음.
+    guard는 운동이 아니므로 카운터 없음 (사람 감지 촬영만 동작)."""
     if mode == "overhead":
         return overhead_c, "overhead"
     if mode == "lateral":
         return lateral_c, "lateral"
+    if mode == "guard":
+        return None, "guard"
     return squat_c, "squat"
 
 
@@ -358,6 +364,26 @@ def main():
                 left, right, chosen = compute_angle(kp, exercise, args.conf, args.side)
                 rep_event = counter.update(chosen, now_ms=now_ms)
 
+            # === 경비 모드: (무장+사람감지) 자동 트리거는 쿨다운(guard_try_capture)을
+            # 적용하지만, "직접 촬영" 버튼은 무조건 즉시 찍는다 - 쿨다운을 공유시키면
+            # 사람이 화면 안에 계속 있어(테스트 중 본인처럼) 자동 촬영이 쿨다운을
+            # 계속 선점해서 버튼을 눌러도 조용히 씹히는 문제가 있었다. force_capture
+            # 플래그는 guard 모드가 아닐 때도 매 프레임 소비해줘야 버튼을 눌러둔 채
+            # 모드를 벗어나도 다음에 guard로 돌아왔을 때 오래된 요청이 갑자기
+            # 튀어나오지 않는다.
+            manual_capture = app_state.guard_pop_force_capture()
+            guard_event = None
+            if exercise == "guard":
+                auto_ok = (app_state.guard_is_armed() and guard_capture.person_detected(kp, args.conf)
+                           and app_state.guard_try_capture())
+                if auto_ok:
+                    guard_event = guard_capture.save_capture(frame, time.time() * 1000.0)
+                    print(f"  [guard] capture {guard_event['file']}  ({guard_event['time']})")
+                elif manual_capture:
+                    app_state.guard_register_manual_capture()
+                    guard_event = guard_capture.save_capture(frame, time.time() * 1000.0, meta={"manual": True})
+                    print(f"  [guard] capture {guard_event['file']}  ({guard_event['time']})  (manual)")
+
             # === Draw overlay: 스켈레톤(pose)만 ===
             # 수치 텍스트(FPS/각도/REPS/PTZ)는 웹 UI가 stats.json으로 표시하므로
             # 영상에 굽지 않는다 — 중복 제거 + putText 비용 절감. 골격은 유지.
@@ -370,8 +396,11 @@ def main():
                 want_video = viewer_count() > 0
             if want_video:
                 annotated = frame.copy()
-                highlight = _HIGHLIGHT_ARM if exercise in ("overhead", "lateral") else _HIGHLIGHT_SQUAT
-                draw_pose(annotated, kp, conf_th=args.conf, highlight=highlight)
+                # guard(경비)는 운동이 아니라 포즈 스켈레톤을 굳이 보여줄 필요가
+                # 없다 - 원본 카메라 화면만 내보낸다.
+                if exercise != "guard":
+                    highlight = _HIGHLIGHT_ARM if exercise in ("overhead", "lateral") else _HIGHLIGHT_SQUAT
+                    draw_pose(annotated, kp, conf_th=args.conf, highlight=highlight)
             else:
                 annotated = None
 
@@ -421,6 +450,14 @@ def main():
                         "type": rep_event[0],
                         "rep_total": rep_event[1],
                         "min_angle_deg": round(rep_event[2], 1),
+                        "frame": frame_idx,
+                    }
+                if guard_event:
+                    live["last_event"] = {
+                        "exercise": "guard",
+                        "type": "GUARD_CAPTURE",
+                        "file": guard_event["file"],
+                        "time": guard_event["time"],
                         "frame": frame_idx,
                     }
                 update_live_state(annotated, live, q=args.jpeg_quality, encode=want_video)
