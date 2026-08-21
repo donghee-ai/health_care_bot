@@ -58,9 +58,9 @@ Arduino UNO Q (Qualcomm Dragonwing QRB2210, Quad-core Cortex-A53 + STM32U585) �
                   브라우저 http://<UNO_Q_IP>:8080/app
 ```
 
-**서보는 Linux가 직접 구동한다 — MCU 경유가 아니다.** UNO Q의 STM32U585로 가는 raw
-serial 경로가 없어(Router Bridge RPC만 가능) 실기에서 작동 불가였고, 통합 시 걷어냈다.
-`ptz/sketch/health_care_ptz.ino`는 그 시절 산물로 **현재 런타임에 쓰이지 않는다.**
+**서보는 Linux가 직접 구동한다 — MCU 경유가 아니다.** ST3215 버스 서보 어댑터를 USB
+허브로 UNO Q에 물려, Linux(pyserial)가 바로 제어한다. `ptz/sketch/health_care_ptz.ino`는
+그 이전 MCU 경유 설계의 산물로 **현재 런타임에 쓰이지 않는다.**
 
 상세: [`docs/01_architecture.md`](docs/01_architecture.md)
 

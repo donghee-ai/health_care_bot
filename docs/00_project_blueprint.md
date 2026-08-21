@@ -60,10 +60,11 @@ FPS 천장 ~11.4는 **invoke(추론) 바운드**다. 근거와 개선 레버는
 ### 2-2. 서보는 Linux가 직접 구동한다 (MCU 경유 아님)
 
 UNO Q는 듀얼브레인(A53 Linux + STM32U585 MCU)이지만 **MCU를 런타임에 쓰지 않는다.**
-Linux↔MCU 경로가 Router Bridge(Unix 소켓 msgpack RPC)뿐이고 raw serial 채널이 없어
-"MCU에 텍스트 명령 전송" 설계가 실기에서 작동 불가였다. 서보를 MCU에 배선할 방법도
-없어(사용자 확인) **MCU 트랙은 잠정 보류**이고, Linux가 pyserial로 ST3215 버스를 직접
-구동한다. `ptz/sketch/health_care_ptz.ino`는 그 시절 유물로 런타임 경로에 없다.
+카메라도 서보도 그냥 **USB로 붙인다** — 어차피 카메라 때문에 셀프파워 USB 허브를
+UNO Q에 물려 쓰고 있어서, 서보 버스 어댑터도 같은 허브에 꽂아 Linux가 pyserial로
+직접 구동한다. MCU 경유가 왜 이 용도로 더 나쁜 선택인지(Router Bridge와 UART가
+겹침)는 [`09_performance_roadmap.md`](09_performance_roadmap.md) §6 참고.
+`ptz/sketch/health_care_ptz.ino`는 그 시절(MCU 경유 설계) 유물로 런타임 경로에 없다.
 
 ### 2-3. 단일 컨테이너 / 단일 프로세스
 

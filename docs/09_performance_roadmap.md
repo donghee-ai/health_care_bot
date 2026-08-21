@@ -127,7 +127,7 @@ CPU에 `asimddp`가 없어 INT8 고속 커널을 못 쓰는 상황이므로, INT
 |---|---|
 | 모델 교체 (Thunder → Lightning) | **사용자 지시로 제외** |
 | 스트리밍 게이팅으로 성능 확보 | 실측 이득 ~0 → 사실상 폐기 (§3) |
-| MCU 듀얼브레인 트랙 | Linux↔MCU가 Router Bridge RPC뿐이고 서보 배선 불가 → **잠정 보류** |
+| MCU 듀얼브레인 트랙 | JDIGITAL UART가 Router Bridge와 같은 페리페럴이라 서보에 주려면 Bridge(Linux→MCU 명령 통로)를 포기해야 하는 자기모순 → **잠정 보류**(2026-08-08 재검토: "불가능"이 아니라 "이 용도로는 자멸적" — [`00`](00_project_blueprint.md) §2-2) |
 | 관성 등속 전환 | overshoot·FPS 의존 증가, 급정거 → 기각 |
 | 해부학 범위/좌우 불일치 게이트 | 검출률만 떨어뜨리고 근본 원인 못 잡음 → 기각 |
 
