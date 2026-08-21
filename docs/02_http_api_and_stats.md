@@ -38,8 +38,20 @@ POST /api/session/start | pause | resume | reset | finish
 | POST | `/api/control/release` | `{client_id}` | 보유자만 |
 | POST | `/api/ptz` | `{client_id, command, delta_deg?, enabled?}` | 제어권 |
 | POST | `/api/mode` | `{client_id, mode}` | 제어권 |
+| POST | `/api/guard/capture-now` | `{client_id}` | 제어권 |
+| GET | `/api/guard/captures` | — | 없음 |
+| GET | `/captures/<file>` | — | 없음 |
 | POST | `/api/session/start` | `{client_id, target_reps?}` | 제어권 |
 | POST | `/api/session/pause`\|`resume`\|`reset`\|`finish` | `{client_id}` | 제어권 |
+
+### 1-0. 경비 모드 전용
+
+- `/api/guard/capture-now` — 무장 상태·사람 감지·쿨다운 전부 무시하고 다음 프레임에서
+  즉시 촬영(`app_state.guard_register_manual_capture`). 자동 감지 쿨다운과는 분리돼
+  있어 항상 즉시 반응한다.
+- `/api/guard/captures` — 최근 촬영 목록(최신순, 기본 12개). 각 항목
+  `{time, ts_ms, file, manual?}`.
+- `/captures/<file>` — 실제 JPEG 서빙 (`captures/` 디렉토리, 경로 탈출 차단).
 
 **모든 POST body에 `client_id`가 필요하다.** 없거나 lock 보유자가 아니면
 `403 {"ok": false, "error": "control_not_claimed"}`.

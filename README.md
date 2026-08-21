@@ -21,6 +21,8 @@ Arduino UNO Q (Qualcomm Dragonwing QRB2210, Quad-core Cortex-A53 + STM32U585) �
 | 3 | **사이드 레터럴 레이즈** 카운팅 | 같은 어깨 올림 각도, 35°↔80° | 동작(임계 실측 튜닝 남음) |
 | 4 | **PTZ 자동 추적** | ST3215 버스 서보 2축, 종목별 상체/하체 프레이밍 + 손실 시 관성 복구 | 실기 검증됨 |
 | 5 | **웹앱**(`:8080/app`) | 라이브 MJPEG + 카운터 + PTZ 조작 + 텔레메트리 | 실기 동작 |
+| 6 | **경비 모드** | 운동과 분리된 4번째 모드. 전환 즉시 홈 정렬 → 5초 무장 → 사람 감지 시 추적+자동촬영(`captures/`) → 10초 미검출 시 홈 복귀. 웹에서 수동 촬영/사진 갤러리도 가능 | 실기 검증됨 |
+| 7 | **원격 접속**(Tailscale Funnel) | 같은 Wi-Fi가 아니어도 외부에서 `/app` 접속 가능 | 실기 검증됨(§3.2) |
 
 **종목은 자동 분류하지 않는다.** 세 종목 모두 정면·직립이라 몸 방향으로 구분이 안 되므로
 웹 UI에서 명시 선택한다(`POST /api/mode`). 카운터 3개는 항상 동시에 살아 있어 모드를
@@ -69,20 +71,48 @@ serial 경로가 없어(Router Bridge RPC만 가능) 실기에서 작동 불가�
 ### 3.1 디바이스(UNO Q) — 실제 운용
 
 ```bash
-ssh arduino@192.168.0.45              # 키 등록됨, 비번 없음
+ssh arduino@192.168.0.50              # 키 등록됨, 비번 없음
 cd ~/health_care_bot
 bash docker/run.sh                    # 카메라/서보 노드 자동 탐색 + 기동
 ```
 
-접속: `http://192.168.0.45:8080/app` (PTZ 조작까지 바로 됨 — 공유 제어권)
+접속: `http://192.168.0.50:8080/app` (PTZ 조작까지 바로 됨 — 공유 제어권)
 
 중지: `docker stop health-care-bot`
 
 > **실행 전 확인** — `/dev/videoN`·`/dev/ttyACM*` 번호는 **부팅마다 바뀐다.**
 > `run.sh`가 이름으로 자동 탐색하지만, 기동 로그의 `camera:` / `serial:` 줄을 꼭 볼 것.
 > 수동 지정: `CAMERA_DEV=/dev/video2 bash docker/run.sh`
+>
+> **IP도 DHCP라 공유기 재부팅 시 바뀔 수 있다** (2026-08-08에 `.45`→`.50`로 실제로
+> 바뀜). 안 붙으면 `arp -a` / ping 스캔으로 재탐색. 상세: [`08_troubleshooting.md`](docs/08_troubleshooting.md).
 
-### 3.2 개발 PC — 서보 직결 테스트
+### 3.2 원격 접속 — 같은 Wi-Fi가 아니어도 (Tailscale Funnel)
+
+한 번만 설정하면 이후로는 `docker/run.sh`만 띄우면 자동으로 원격 접속이 열린다.
+
+```bash
+# 최초 1회 — 디바이스에 Tailscale 설치 + 로그인
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up                     # 뜨는 URL을 폰/PC로 열어 로그인
+
+# 필요할 때만 — 공개 URL 켜기/끄기 (둘 다 sudo 비밀번호 필요, SSH로 직접 실행)
+sudo tailscale funnel --bg 8080
+sudo tailscale funnel --https=443 off   # 다 보여준 뒤 반드시 끌 것
+```
+
+접속(외부): `https://unoq-korea01.tailf89de1.ts.net/app`
+접속(Tailscale 기기끼리, Funnel 없이): UNO Q의 Tailscale IP로 직접 (`tailscale ip -4`로 확인)
+
+> **이 앱은 PIN(`1234`) 하나 말고 실질적 인증이 없다.** Funnel이 켜진 동안엔 그
+> 링크를 아는 누구나 카메라·PTZ·경비모드 사진을 볼 수 있다 — 데모 보여줄 때만
+> 켰다 끄는 용도로 쓸 것, 상시 노출 금지.
+>
+> **뷰어(스트림 접속자)가 늘수록 FPS가 떨어진다** — 뷰어 0명 ~11.3 FPS, 1명 ~10,
+> 2명 동시 접속(예: PC+폰) ~8까지 하락(실측). 파이썬 GIL 스레드 경합 + (원격이면)
+> 암호화 오버헤드가 원인. 완화하려면 `--jpeg-quality`를 낮추는 정도가 현실적.
+
+### 3.3 개발 PC — 서보 직결 테스트
 
 ```powershell
 cd C:\Project\health_care_bot
@@ -98,7 +128,7 @@ py -3.14 scripts/ptz_camera_track.py --port COM9 --camera 0 --drive
 (CH343, baud 1,000,000)이고, **서보 외부전원(6~12.6V)이 없으면 포트는 열리는데 ID 전부
 무응답**이 된다.
 
-### 3.3 모델 준비 (한 번만)
+### 3.4 모델 준비 (한 번만)
 
 ```bash
 bash scripts/copy_model.sh    # ../unoq-companion-robot/pose/models/ -> models/
@@ -118,8 +148,10 @@ health_care_bot/
 │   ├── exercise_counter.py     RepCounter + Squat/OverheadPress/LateralRaise
 │   ├── ptz_controller.py       PTZ 추적 + 손실 복구 + 서보 직결
 │   ├── st3215_bus.py           ST3215 프로토콜 저수준 드라이버
-│   ├── http_server.py          MJPEG + stats.json + /api/* + /app 서빙
-│   └── app_state.py            세션 상태 + 운영자 PIN 제어권 lock
+│   ├── http_server.py          MJPEG + stats.json + /api/* + /app + /captures/* 서빙
+│   ├── app_state.py            세션 상태 + 운영자 PIN 제어권 lock + 경비 모드 상태
+│   └── guard_capture.py        경비 모드: 사람 감지 판정 + JPEG 저장 + 로그
+├── captures/                    경비 모드 촬영 산출물 (jpg + guard_log.jsonl) — gitignore 대상
 ├── web/                        Vite + React PWA (시안 6종) — 빌드 산출물 web/dist
 │   ├── dist/index.html         ★ 현재 /app으로 서빙되는 애플 "Fluid" 정적 페이지
 │   ├── dist/index.html.stock.bak   stock React 빌드 백업
@@ -129,7 +161,7 @@ health_care_bot/
 ├── docker/
 │   ├── Dockerfile              Ubuntu 22.04 + python3.10 + ai-edge-litert + pyserial
 │   ├── requirements.txt
-│   └── run.sh                  빌드 + 실행 (카메라/시리얼 노드 자동 탐색)
+│   └── run.sh                  빌드 + 실행 (카메라/시리얼 노드 자동 탐색, tty 유무 감지, PITCH_SIGN/YAW_SIGN 지원)
 ├── models/movenet_thunder_int8.tflite
 ├── scripts/                    벤치·도구 (런타임 아님)
 │   ├── calibrate_st3215.py     중앙 재캘리브레이션 / 긴급정지
@@ -160,7 +192,7 @@ health_care_bot/
 | 08 | [`08_troubleshooting.md`](docs/08_troubleshooting.md) | 증상 → 원인 함정 색인 |
 | 09 | [`09_performance_roadmap.md`](docs/09_performance_roadmap.md) | 성능 실측 + 다음 할 일 우선순위 |
 | — | [`docs/history/`](docs/history/) · [`docs/issues/`](docs/issues/) | 기록(append-only) — 한 사건 한 파일 |
-| — | [`docs/history/2026-07-26_05_session_handoff.md`](docs/history/2026-07-26_05_session_handoff.md) | **가장 최신 세션 맥락** |
+| — | [`docs/history/2026-08-08_01_session_handoff.md`](docs/history/2026-08-08_01_session_handoff.md) | **가장 최신 세션 맥락** — 경비 모드, PTZ 버그 3건, Tailscale 원격접속 |
 | — | [`web/ARCHITECTURE.md`](web/ARCHITECTURE.md) · [`APP_GUIDE.md`](APP_GUIDE.md) | 웹앱 설계 근거 / React 시절 실행 가이드(일부 낡음) |
 
 ---
@@ -171,9 +203,10 @@ health_care_bot/
 
 | 플래그 | 기본 | 의미 |
 |---|---|---|
-| `--mode` | `squat` | `squat` / `overhead` / `lateral`. 웹 `/api/mode`로 실시간 변경됨 |
+| `--mode` | `squat` | `squat` / `overhead` / `lateral` / `guard`. 웹 `/api/mode`로 실시간 변경됨 |
 | `--camera` | `0` | `/dev/videoN` 인덱스 |
 | `--serial` | (없음) | 서보 버스 포트. **미지정 시 PTZ disabled**로 degrade |
+| `--pitch-sign` / `--yaw-sign` | `-1` / `1` | 짐벌 재조립 후 방향 반전 보정 (2026-08-06 확정값). `docker/run.sh`는 `PITCH_SIGN`/`YAW_SIGN` 환경변수로 노출 |
 | `--serve` | `0` | HTTP 포트 (0 = 비활성) |
 | `--conf` | `0.3` | keypoint confidence 임계 |
 | `--side` | `better` | 좌/우 각도 선택: 둘 다 보이면 평균, 한쪽만 보이면 그쪽 |
@@ -209,7 +242,9 @@ PTZ 파라미터의 의미와 튜닝 지침: [`docs/03_algorithm_ptz_tracking.md
   문구와 다름): [`docs/issues/2026-07-16_01`](docs/issues/2026-07-16_01_servo_id_change_takes_effect_immediately.md)
 - **HTTP는 인증이 없다.** 운영자 mutation만 PIN(`1234`, `src/app_state.py`) 기반
   제어권 lock으로 막혀 있고 조회·스트림은 무인증이다. **로컬 LAN 외부 노출 금지**,
-  시연 전 PIN 교체 권장.
+  시연 전 PIN 교체 권장. **Tailscale Funnel(§3.2)도 이 규칙에서 예외가 아니다** —
+  켜져 있는 동안엔 인터넷 전체에 무인증으로 노출되는 것과 같으니 데모 끝나면
+  반드시 끌 것.
 - **UNO Q는 USB 호스트 VBUS가 꺼져 있다** — 버스파워 허브/장치는 인식되지 않는다.
   **셀프파워(외부전원) USB 허브 필수.** 카메라·서보가 *둘 다* 안 잡히면 개별 장치가
   아니라 허브 전원부터 의심할 것.
@@ -227,6 +262,12 @@ PTZ 파라미터의 의미와 튜닝 지침: [`docs/03_algorithm_ptz_tracking.md
 | `cv2.CAP_PROP_BUFFERSIZE` | 드라이버가 무시한다. `FrameGrabber`(최신 프레임만 유지)로 해결됨 | [issues/2026-07-11_04](docs/issues/2026-07-11_04_camera_buffer_accumulation_causes_growing_latency.md) |
 | `adb push` | Git Bash는 경로를 변환해 조용히 실패 → **PowerShell로**. 디렉토리는 remote `rm -rf` 먼저(안 하면 `src/src/` 중첩) | [issues/2026-07-11_01](docs/issues/2026-07-11_01_adb_push_msys_path_mangling.md), [_02](docs/issues/2026-07-11_02_adb_push_directory_nests_when_remote_exists.md) |
 | cp949 콘솔 크래시 | em-dash·⚠ 같은 문자를 **코드/주석**에 쓰면 Windows 콘솔에서 `UnicodeEncodeError` | [docs/08](docs/08_troubleshooting.md) §7 |
+| 프론트에서 API 주소 포트 하드코딩 | `location.hostname:8080`처럼 고정하면 리버스 프록시/터널(Tailscale Funnel 등, 외부 포트가 8080이 아님)에서 스트림·상태 요청이 전부 실패. `location.origin`을 그대로 쓸 것 | [history/2026-08-08_01](docs/history/2026-08-08_01_session_handoff.md) §3 |
+| 모바일 접속 QR을 정적 이미지로 생성 | IP가 DHCP라 바뀌는데 QR을 미리 렌더링해두면 절대 안 갱신됨. 브라우저에서 매번 `location`으로 다시 인코딩할 것(`qrSvg()`) | [history/2026-08-08_01](docs/history/2026-08-08_01_session_handoff.md) §3 |
+| `docker/run.sh`가 tty 없는 세션에서 조용히 죽음 | `-it` 고정이라 비대화형 SSH 등에서 `the input device is not a TTY`로 즉시 종료(`--rm`이라 로그도 안 남음). tty 유무를 감지해 조건부로 적용하도록 수정됨 | [history/2026-08-08_01](docs/history/2026-08-08_01_session_handoff.md) §3 |
+| "PC는 되는데 폰만 안 됨"이 무선 격리를 배제하는 근거가 아님 | PC가 실제로 유선으로 나가고 있으면 무선 클라이언트 격리를 애초에 안 타는 것. `Find-NetRoute`(Windows)로 실제 경로 먼저 확인 | [history/2026-08-08_01](docs/history/2026-08-08_01_session_handoff.md) §3 |
+| 자동 트리거와 수동 트리거가 같은 쿨다운 공유 | 경비모드 "직접 촬영" 버튼이 자동감지 쿨다운을 공유해서, 사람이 계속 화면에 있으면 버튼이 조용히 씹힘. 수동 트리거는 쿨다운 무시하고 항상 즉시 반응하게 분리 | [history/2026-08-08_01](docs/history/2026-08-08_01_session_handoff.md) §3 |
+| Docker 이미지가 ROOT 파티션을 채움 | `/var/lib/docker`가 ROOT에 있어 재빌드를 반복하면 옛 레이어가 안 쓰는 채로 계속 쌓인다. `docker image prune -a`로 회수 가능(단, 다른 프로젝트 이미지까지 같이 지워질 수 있으니 목록 확인 후) | [history/2026-08-08_01](docs/history/2026-08-08_01_session_handoff.md) |
 
 전체 목록은 [`docs/08_troubleshooting.md`](docs/08_troubleshooting.md) — 증상에서 원인으로
 가는 색인 + `issues/` 전체 목록이 있다.
@@ -237,8 +278,10 @@ PTZ 파라미터의 의미와 튜닝 지침: [`docs/03_algorithm_ptz_tracking.md
 
 | 항목 | 값 | 비고 |
 |---|---|---|
-| 추론 FPS | ~11.4 | **invoke(추론) 바운드**. 인코딩 on/off 차이 ~0 |
+| 추론 FPS | ~11.4 | **invoke(추론) 바운드**. 인코딩 on/off 차이 ~0(뷰어 0명 기준) |
 | 루프 지연 | ~90 ms | grab → invoke → draw → encode 직렬 |
+| 동시 뷰어 1명 | ~10 FPS | 스트림 배달 스레드 1개 추가 시 GIL 경합으로 하락 (로컬/원격 무관) |
+| 동시 뷰어 2명(예: PC+폰) | ~8 FPS | 스레드 경합 + 원격이면 Tailscale 암호화 오버헤드까지 겹침 |
 | CPU | ~83% (4코어 합산 100% 기준) | 이미 warning 구간, 여유 17% |
 | CPU 클럭 | 2016 MHz 전 코어 = 최대 | 거버너로 더 올릴 여지 없음 |
 | 온도 | 51~73°C | throttle 전 |
@@ -253,4 +296,3 @@ FPS를 올리는 유일한 큰 레버는 **NPU/DSP 델리게이트**(Hexagon HTP
 
 - 추론 모델: **MoveNet Thunder INT8** (`movenet_thunder_int8.tflite`, ~6.8 MB) —
   기존 pose 라인 자산 재사용. git에 미포함 (`scripts/copy_model.sh`로 복사).
-- 본 라인 코드: MIT.

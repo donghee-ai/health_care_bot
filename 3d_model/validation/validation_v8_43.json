@@ -1,0 +1,221 @@
+{
+  "version": "v8.43",
+  "cup_profile": {
+    "height_mm": 82.0,
+    "bottom_end_af_mm": 119.0,
+    "belt_af_mm": 135.0,
+    "top_end_af_mm": 119.0,
+    "bottom_bevel_z_mm": [
+      0.0,
+      8.0
+    ],
+    "top_bevel_z_mm": [
+      74.0,
+      82.0
+    ],
+    "half_width_change_mm": 8.0,
+    "vertical_run_mm": 8.0,
+    "side_section_angle_degrees": 45.0,
+    "top_bottom_symmetric": true
+  },
+  "uno_q": {
+    "case_center_mm": [
+      -36.0,
+      20.0,
+      43.17165
+    ],
+    "case_bounds_mm": [
+      [
+        -41.5,
+        -16.7911,
+        14.0
+      ],
+      [
+        -30.5,
+        56.7911,
+        72.3433
+      ]
+    ],
+    "moved_to_negative_x_vertex": false,
+    "moved_inward_to_prevent_holder_clipping": true,
+    "raised_plus_y_for_usb_access": true,
+    "centered_in_y_to_reduce_interference": false,
+    "used_mount_holes_local_yz_mm": [
+      [
+        -19.05,
+        24.13
+      ],
+      [
+        -20.32,
+        -24.13
+      ]
+    ],
+    "unused_mount_holes_local_yz_mm": [
+      [
+        31.75,
+        8.89
+      ],
+      [
+        31.75,
+        -19.05
+      ]
+    ],
+    "mount_screw_count": 2,
+    "minimum_holder_margin_inside_inner_hex_mm": 0.231,
+    "top_clearance_to_45deg_bevel_mm": 1.657,
+    "servo_board_overlap_mm3": 0.0,
+    "yaw_motor_overlap_mm3": 0.0
+  },
+  "lid_posts": {
+    "count": 4,
+    "specified_centers_xy_mm": [
+      [
+        -50.0,
+        18.0
+      ],
+      [
+        -50.0,
+        -18.0
+      ],
+      [
+        50.0,
+        18.0
+      ],
+      [
+        50.0,
+        -18.0
+      ]
+    ],
+    "centers_xy_mm": [
+      [
+        -50.0,
+        18.0
+      ],
+      [
+        -50.0,
+        -18.0
+      ],
+      [
+        50.0,
+        18.0
+      ],
+      [
+        50.0,
+        -18.0
+      ]
+    ],
+    "vertical_range_mm": [
+      8.0,
+      78.4
+    ],
+    "wall_attached_with_following_tapered_ribs": true,
+    "connected_to_uno_holder": false,
+    "connected_to_hub_holder": false,
+    "minimum_post_circle_distance_to_uno_mm": 4.0,
+    "minimum_post_circle_distance_to_hub_mm": 4.5,
+    "minimum_post_rib_margin_inside_outer_shell_mm": 1.146,
+    "lid_holes_relocated_to_post_centers": true
+  },
+  "yaw_motor_height_support": {
+    "restored_old_style_bottom_cradle": true,
+    "floor_z_mm": 8.0,
+    "motor_bottom_support_plane_z_mm": 42.0,
+    "motor_top_proxy_z_mm": 77.0,
+    "lid_underside_z_mm": 80.8,
+    "motor_top_to_lid_underside_gap_mm": 3.8,
+    "side_rails_top_z_mm": 58.0,
+    "mounting_ear_pad_top_z_mm": 44.2,
+    "lid_yaw_screw_holes_unchanged": [
+      [
+        10.25,
+        -8.3
+      ],
+      [
+        -10.25,
+        -8.3
+      ],
+      [
+        10.25,
+        -29.0
+      ],
+      [
+        -10.25,
+        -29.0
+      ]
+    ]
+  },
+  "interference": {
+    "uno_vs_servo_board_bbox_overlap_mm3": 0.0,
+    "uno_vs_yaw_motor_bbox_overlap_mm3": 0.0,
+    "hub_vs_yaw_motor_bbox_overlap_mm3": 0.0,
+    "all_new_support_vertices_inside_outer_hex": true,
+    "minimum_new_support_outer_margin_mm": 1.146
+  },
+  "preserved": {
+    "hub_slot_mm": 11.0,
+    "round_port_diameter_mm": 20.0,
+    "rectangular_port_mm": [
+      32.0,
+      16.0
+    ],
+    "lid_cable_slot_width_mm": 10.0,
+    "v8_36_reinforced_head": true,
+    "column_from_v8_31": true
+  },
+  "mesh": {
+    "cup_component_count": 542,
+    "lid_component_count": 4,
+    "cup_all_components_watertight": true,
+    "lid_all_components_watertight": true,
+    "cup_stl_body_count": 33,
+    "lid_stl_body_count": 3,
+    "recommended_print_files": [
+      "3mf/cup_components.3mf",
+      "3mf/lid_components.3mf",
+      "3mf/head_front_reinforced_components.3mf",
+      "3mf/head_back_reinforced_components.3mf"
+    ]
+  },
+  "annotated_layout": {
+    "uno_center_xy_mm": [
+      -36.0,
+      20.0
+    ],
+    "uno_bounds_xy_mm": {
+      "x": [
+        -41.5,
+        -30.5
+      ],
+      "y": [
+        -16.7911,
+        56.7911
+      ]
+    },
+    "lid_post_centers_xy_mm": [
+      [
+        -50.0,
+        18.0
+      ],
+      [
+        -50.0,
+        -18.0
+      ],
+      [
+        50.0,
+        18.0
+      ],
+      [
+        50.0,
+        -18.0
+      ]
+    ],
+    "servo_board_kept_at_existing_top_position": true,
+    "hub_kept_at_existing_right_position": true,
+    "yaw_motor_kept_at_existing_center_position": true,
+    "old_corner_posts_removed": true,
+    "minimum_post_outer_margin_inside_top_shoulder_mm": 1.041,
+    "uno_vs_servo_board_xy_overlap_mm2": 0.0,
+    "uno_vs_hub_xy_overlap_mm2": 0.0,
+    "uno_vs_yaw_xy_overlap_mm2": 0.0
+  }
+}
