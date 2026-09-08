@@ -9,9 +9,6 @@ __pycache__/
 .venv/
 venv/
 
-# 대외비 - 멘토 패키지는 절대 커밋 금지 (현재 없지만 방어적으로)
-docs/mentor/
-
 # 로그 / 런타임 산출물
 *.log
 logs/
