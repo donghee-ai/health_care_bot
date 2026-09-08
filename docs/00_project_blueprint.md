@@ -39,7 +39,7 @@ FPS 천장 ~11.4는 **invoke(추론) 바운드**다. 근거와 개선 레버는
 
 | 라인 | 폴더 | 관계 |
 |---|---|---|
-| Vision / ASR / Pose | `unoq-companion-robot/` | 1차 PoC 통과한 3 라인. 라이센스·지연 문제로 vision/asr는 본 라인에서 제외 |
+| Vision / ASR / Pose / KWS | [`unoq-edge-ai-lines`](https://github.com/donghee-ai/unoq-edge-ai-lines) (private)<br>로컬 경로는 `unoq-companion-robot/` | 1차 PoC 통과한 라인들. 라이센스·지연 문제로 vision/asr는 본 라인에서 제외 |
 | **health_care_bot (본 라인)** | `health_care_bot/` | **pose 라인 자산(MoveNet Thunder INT8)만 재사용**해 신설한 별도 라인 |
 
 본 라인의 변경은 메인 라인에 영향을 주지 않는다. 모델은
