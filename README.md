@@ -101,7 +101,7 @@ sudo tailscale funnel --bg 8080
 sudo tailscale funnel --https=443 off   # 다 보여준 뒤 반드시 끌 것
 ```
 
-접속(외부): `https://unoq-korea01.tailf89de1.ts.net/app`
+접속(외부): `https://<기기이름>.<tailnet>.ts.net/app` — 실제 주소는 기기에서 `tailscale status`로 확인(공개 리포라 적지 않는다)
 접속(Tailscale 기기끼리, Funnel 없이): UNO Q의 Tailscale IP로 직접 (`tailscale ip -4`로 확인)
 
 > **이 앱은 PIN(`1234`) 하나 말고 실질적 인증이 없다.** Funnel이 켜진 동안엔 그

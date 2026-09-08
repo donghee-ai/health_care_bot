@@ -1,5 +1,8 @@
 # 2026-08-08 세션 핸드오프 — 경비 모드 신설 · PTZ 모드전환 버그 · 원격 접속(Tailscale)
 
+> **[2026-09-08 보안 마스킹]** 공개 리포 노출을 막기 위해 Tailscale 주소·Tailscale IP·공유기 SSID를 가렸다.
+> 기록 내용 자체는 바꾸지 않았다. 원칙: [`00`](../00_project_blueprint.md) §7-1.
+
 > 다음 세션은 이 문서부터 읽으면 오늘까지의 맥락이 잡힙니다. 웹 UI 구조는
 > [`05_web_ui_fluid.md`](../05_web_ui_fluid.md), API 계약은
 > [`02_http_api_and_stats.md`](../02_http_api_and_stats.md) 참고 (오늘 guard 관련 갱신됨).
@@ -24,12 +27,12 @@
   메모리에 최신 IP 기록해둠).
 - 서비스: `screen -S hcb` 세션 안에서 `bash docker/run.sh` 실행 중.
 - **로컬 LAN**: `http://192.168.0.50:8080/app`
-- **외부(Tailscale Funnel, 필요할 때만 켤 것)**: `https://unoq-korea01.tailf89de1.ts.net/app`
+- **외부(Tailscale Funnel, 필요할 때만 켤 것)**: `https://<기기이름>.<tailnet>.ts.net/app`
   - 켜기: `sudo tailscale funnel --bg 8080`
   - 끄기: `sudo tailscale funnel --https=443 off` (다 보여준 뒤 반드시 끌 것 — 이 앱은
     PIN(`1234`) 하나 말고 실질적 인증이 없어서, 링크 아는 사람 누구나 카메라/PTZ/경비
     사진 다 볼 수 있음)
-  - UNO Q의 Tailscale IP: `100.127.115.4` (자기 기기끼리는 Funnel 없이 이걸로도 접속 가능)
+  - UNO Q의 Tailscale IP: `tailscale ip -4`로 확인 (자기 기기끼리는 Funnel 없이 이걸로도 접속 가능)
 - PTZ pitch 부호: **`PITCH_SIGN=-1`이 새 기본값** (2026-08-06 짐벌 재조립 이후 확정,
   `docker/run.sh`/`main.py`/`ptz_controller.py` 전부 반영됨).
 
@@ -57,13 +60,13 @@ docker stop health-care-bot
    그림이라 IP 바뀌어도 절대 안 바뀌는 함정이었음. 외부 CDN 없이(로봇 Wi-Fi에
    인터넷 없을 수 있음) 브라우저 안에서 그 자리에서 QR을 인코딩하는 자체 생성기
    내장(`qrSvg()`, 버전1~4·ECC-M·마스크0 고정). jsqr로 실제 디코드 검증 완료.
-5. **네트워크 대장정 (오늘 몇 시간 소모)** — 결론: **정전으로 room5G 공유기가
+5. **네트워크 대장정 (오늘 몇 시간 소모)** — 결론: **정전으로 집 공유기(5GHz 대역)가
    비정상 재부팅 → 무선 클라이언트 격리 상태로 고착**. PC는 사실 유선으로 나가고
    있어서 무선 격리를 안 타고 있었을 뿐이었고("PC는 되는데 폰만 안 됨"이 오히려
    격리의 증거였음), 문제의 AP를 한 번 더 깨끗하게 재시작하니 해결. 상세 진단
    순서는 [[project_hcb_demo_network]] 메모리에 기록.
 6. **Tailscale + Funnel로 원격 접속 구축** — 다른 와이파이/모바일데이터에서도
-   `https://unoq-korea01.tailf89de1.ts.net/app`으로 접속 가능. 이 과정에서
+   `https://<기기이름>.<tailnet>.ts.net/app`으로 접속 가능. 이 과정에서
    **프론트엔드가 API 주소를 `:8080`으로 하드코딩**하고 있어 Funnel(외부 포트가
    8080이 아님)에서 스트림/상태가 안 들어오던 버그도 같이 발견·수정
    (`location.origin`을 그대로 쓰도록 변경).

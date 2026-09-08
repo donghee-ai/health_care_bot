@@ -26,10 +26,10 @@ docker stop health-care-bot
 |---|---|
 | 호스트 | `unoq-korea01` / 사용자 `arduino` |
 | IP | `192.168.0.50` (DHCP — 바뀌면 `adb shell "hostname -I"`로 재확인) |
-| Tailscale | `100.127.115.4` / `unoq-korea01.tailf89de1.ts.net` (§7) |
+| Tailscale | 설치돼 있음. 실제 주소는 기기에서 `tailscale ip -4` / `tailscale status`로 확인 (§8) |
 | 앱 루트 | `/home/arduino/health_care_bot` (git 저장소 아님 — 파일 복사 배포) |
 | 런타임 | Docker 컨테이너 `health-care-bot:22.04` |
-| adb serial | `1204329696` |
+| adb serial | `& $ADB devices`로 확인 (기기 고유값이라 문서에 적지 않는다) |
 
 **SSH가 기본이다** (2026-07-19에 키 등록 완료 — 비번 없이 붙는다).
 
@@ -248,12 +248,16 @@ curl -fsSL https://tailscale.com/install.sh | sh
 sudo tailscale up                       # 출력되는 URL을 폰/PC로 열어 로그인
 
 # 보여줄 때만
-sudo tailscale funnel --bg 8080         # https://unoq-korea01.tailf89de1.ts.net/app
+sudo tailscale funnel --bg 8080         # https://<기기이름>.<tailnet>.ts.net/app
 sudo tailscale funnel --https=443 off   # 끝나면 반드시 끈다
 ```
 
-Tailscale 기기끼리는 Funnel 없이 Tailscale IP로 직접 붙는다(`tailscale ip -4`,
-2026-09-08 기준 `100.127.115.4`).
+Tailscale 기기끼리는 Funnel 없이 Tailscale IP로 직접 붙는다(`tailscale ip -4`로 확인).
+
+> **Funnel 주소와 Tailscale IP는 문서에 적지 않는다.** 이 리포는 공개라, 실제 주소가
+> 적혀 있으면 Funnel을 켜는 순간 그 주소를 아는 누구나 접속을 시도할 수 있다. 조회·스트림은
+> 무인증이고 PIN은 평문 하드코딩이다([`02`](02_http_api_and_stats.md) §6). 주소는 그때그때
+> 기기에서 확인해 쓸 것.
 
 > 🚨 **Funnel은 이 서버를 공개 인터넷에 그대로 연다.** 조회·스트림은 무인증이고 PIN은
 > 평문 하드코딩이며 데모 페이지는 사실상 무인증 조작이다([`02`](02_http_api_and_stats.md) §6).

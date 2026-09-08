@@ -1,5 +1,8 @@
 # 2026-07-11 — Health Care Bot Live PWA 최초 구현
 
+> **[2026-09-08 보안 마스킹]** 공개 리포 노출을 막기 위해 adb serial(기기 고유 식별자)를 가렸다.
+> 기록 내용 자체는 바꾸지 않았다. 원칙: [`00`](../00_project_blueprint.md) §7-1.
+
 ## 시점
 
 2026-07-11
@@ -40,7 +43,7 @@ Playwright로 뷰어/운영자 × 모바일/데스크톱 화면을 실제 브라
 스크린샷 확인, 콘솔 에러 0건. PIN claim 직후 배지가 다음 폴링까지 늦게
 갱신되는 문제를 발견해 낙관적 로컬 상태로 즉시 수정.
 
-실제 UNO Q 디바이스(`unoq-korea01`, adb serial `1204329696`)에도 배포해
+실제 UNO Q 디바이스(`unoq-korea01`, adb serial은 `adb devices`로 확인)에도 배포해
 컨테이너 기동 로그로 `/app` 서빙 확인 (상세: `2026-07-11_02_device_deploy_camera_not_detected.md`).
 
 ## 다음 단계
