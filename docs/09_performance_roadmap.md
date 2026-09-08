@@ -7,14 +7,18 @@
 
 | 항목 | 실측 | 측정 시점 |
 |---|---|---|
-| e2e FPS | **11.3~11.4** | 2026-07-21 |
-| 루프 지연 `loop_ms` | ~90 ms | |
-| CPU 사용률 (4코어 합산 100% 기준) | **~83%** (`vmstat` 교차검증 84%) | 2026-07-19 |
-| CPU 클럭 | 4코어 전부 **2016 MHz = 최대** | schedutil이 이미 최대까지 밀어붙임 |
-| CPU 명령셋 | `asimd`만, **`asimddp`(INT8 dotprod) 없음** | |
-| RSS | ~215 MB | |
-| SoC 온도 | 51°C(경부하) ~ 73°C(추론 지속) | throttle 전 |
-| dropped_frames | 0 | |
+| e2e FPS | **11.3** (10.5~11.6) | **2026-09-08 재측정** |
+| 루프 지연 `loop_ms` | ~90 ms (84.8~129.8) | 2026-09-08 |
+| CPU 사용률 (4코어 합산 100% 기준) | **~84%** (78.4~86.5, `vmstat` 교차검증 84%) | 2026-09-08 |
+| CPU 클럭 | 4코어 전부 **2016 MHz = 최대** | schedutil이 이미 최대까지 밀어붙임 (2026-09-08 재확인) |
+| CPU 명령셋 | `asimd`만, **`asimddp`(INT8 dotprod) 없음** | 2026-09-08 `/proc/cpuinfo` 재확인 |
+| RSS | **~101 MB** (과거 문서값 215 MB는 폐기) | 2026-09-08 |
+| SoC 온도 | 60°C(기동 30분 이내) / 과거 최고 73°C(추론 지속) | throttle 전 |
+| dropped_frames | 0 | 2026-09-08 |
+
+> 2026-09-08 측정 조건: 컨테이너 기동 후 `/stats.json` 2초 간격 15회 폴링, 뷰어 0명,
+> 사람 없음. `docker stats` 기준 컨테이너 메모리는 53.8 MiB.
+> **RSS만 과거값과 2배 차이가 났고 나머지는 전부 기존 서술 범위와 일치했다.**
 
 **결론: 시스템은 invoke(추론) 바운드다.** 모델을 안 바꾸면 유일한 큰 레버는 NPU 델리게이트다.
 
@@ -81,17 +85,25 @@ CPU에 `asimddp`가 없어 INT8 고속 커널을 못 쓰는 상황이므로, INT
 
 ## 4. CPU · 발열 여유
 
-**측정 시점 CPU 83%** — 추론(MoveNet Thunder INT8, 11 FPS, 4스레드)과 MJPEG 인코딩이 대부분을
+**측정 시점 CPU ~84%** — 추론(MoveNet Thunder INT8, 11 FPS, 4스레드)과 MJPEG 인코딩이 대부분을
 쓰고 있고 **이미 warning 구간(70~90%)이다.** 앞으로 기능을 얹을 때 반드시 참고할 수치다:
 
 - FPS를 올리려는 시도는 CPU 여유가 없어 한계가 있다.
-- MCU 트랙(보류)이나 KWS 같은 추가 워크로드를 얹으면 **이 17%를 나눠 써야 한다.**
+- MCU 트랙(보류)이나 KWS 같은 추가 워크로드를 얹으면 **이 16%를 나눠 써야 한다.**
 - 온도는 추론 지속 시 73°C까지 올라간다(throttle 전). **soak(장시간) 측정은 아직 안 했다.**
 
 > `cpu_percent`는 컨테이너 안에서도 **호스트 전체 부하**다(procfs 네임스페이스 미분리).
 > 이 프로세스만의 사용률이 아니다 — [`02`](02_http_api_and_stats.md) §4.
 
 ## 5. 다음 할 일 우선순위
+
+### 5-0. 2026-08-08 이후 미해결로 넘어온 것
+
+| # | 항목 | 내용 |
+|---|---|---|
+| 0-1 | **스쿼트↔숄더프레스 전환 시 pitch 범위** | 무릎-어깨 각도차가 ±30° 범위를 거의 끝까지 써서, 카메라-사람 거리가 가까우면 전환 중 사람을 놓칠 수 있다. 사람이 더 멀리 서서 재테스트 필요 → [`03`](03_algorithm_ptz_tracking.md) §12 |
+| 0-2 | **동시 뷰어 2명 이상에서 FPS 저하** | PC+폰 동시 접속에서 10 → 8 관측. Python GIL 스레드 경합 + Funnel 암호화 오버헤드 추정. `--jpeg-quality`를 낮추는 게 쉬운 완화책이나 `run.sh`에 옵션 미노출 |
+| 0-3 | **`captures/` 자동 정리 없음** | 경비 모드 사진이 무한히 쌓인다. 2026-09-08 기준 207장 / 17 MB, 루트 파티션 73% 사용 → [`07`](07_runbook.md) §9 |
 
 ### 5-1. 실측이 필요한 것 (코드 작업 아님, 최우선)
 
@@ -107,7 +119,8 @@ CPU에 `asimddp`가 없어 INT8 고속 커널을 못 쓰는 상황이므로, INT
 ### 5-2. 그다음
 
 5. **NPU 델리게이트 가능성 조사** (§2-1)
-6. 웹 계층 확정 — Fluid로 굳힐지, React 시안 6종을 정리할지 결정 + `web/DESIGN.md` 갱신
+6. ~~웹 계층 확정~~ — **2026-09-08 Fluid로 확정.** 남은 일은 결정이 아니라 정리다:
+   보관된 `web/src/` React 계층과 `web/DESIGN.md`·`APP_GUIDE.md`를 지울지 남길지
 7. soak(장시간) 측정 — 온도 추이와 클럭 유지 확인
 
 ### 5-3. 알려진 부채 (판단 필요)
@@ -118,6 +131,8 @@ CPU에 `asimddp`가 없어 INT8 고속 커널을 못 쓰는 상황이므로, INT
 | **`coast_frames`가 프레임 기준** | 시간 기준(`coast_duration_s`)으로 바꾸고 감쇠도 시간당으로 환산 → [`03`](03_algorithm_ptz_tracking.md) §12 |
 | `coast_fov_deg` 추정값 | 60°는 실측이 아니다. 보정법은 [`03`](03_algorithm_ptz_tracking.md) §11 |
 | **Dockerfile CMD 낡음** | `--mode auto`가 남아 있어 손으로 `docker run`하면 즉시 종료 → [`01`](01_architecture.md) §7-1 |
+| **PTZ 쿨다운 기본값이 두 군데** | `ptz_controller.py`의 80 ms는 죽은 값이고 `main.py` CLI의 250 ms가 실동작값이다. 코드만 읽으면 오해한다 → [`03`](03_algorithm_ptz_tracking.md) §7 |
+| **`scripts/mock_serve.py` 깨짐** | 07-26에 삭제된 `PushupCounter`를 import해 즉시 `ImportError`. 프론트 목업 개발 경로가 막혀 있다 → [`07`](07_runbook.md) §7 |
 | 서보 실제각 미확인 | 목표각과 어긋나도 감지 못 함 |
 | 다중 접속 부하 | `/stream.mjpg`가 커넥션당 스레드 1개 점유. 실측 안 됨 |
 
@@ -136,4 +151,5 @@ CPU에 `asimddp`가 없어 INT8 고속 커널을 못 쓰는 상황이므로, INT
 - [`history/2026-07-21_02`](history/2026-07-21_02_session_handoff.md) — 성능 조사 결론(§1·§2)의 1차 출처
 - [`history/2026-07-19_03`](history/2026-07-19_03_cpu_usage_telemetry.md) — CPU 사용률 계측 추가 + 83% 발견
 - [`history/2026-07-15_01`](history/2026-07-15_01_framegrabber_verified_latency_fixed_fps_unchanged.md) — 지연과 FPS가 다른 지표임을 실측
-- [`history/2026-07-26_05`](history/2026-07-26_05_session_handoff.md) — 최신 세션 맥락과 남은 일
+- [`history/2026-08-08_01`](history/2026-08-08_01_session_handoff.md) — **최신 세션 맥락과 남은 일**
+- [`history/2026-07-26_05`](history/2026-07-26_05_session_handoff.md) — 그 이전 세션 맥락

@@ -15,7 +15,10 @@
 | 영상이 매끄러운데 지연이 크다 | 카메라 버퍼 누적 | §5 |
 | 코드를 밀었는데 반영이 안 된다 | adb push 중첩 / Git Bash 경로 변환 | §6 |
 | 웹을 고쳤는데 안 바뀐다 | `npm run build`가 Fluid를 덮음 | §6 |
+| `mock_serve.py`가 안 뜬다 | 삭제된 `PushupCounter` import — 코드 수정 필요 | [`07`](07_runbook.md) §7 |
 | 콘솔에서 `UnicodeEncodeError` | cp949 콘솔 + em-dash·이모지 | §7 |
+| 경비 모드 "직접 촬영"이 씹힌다 | (해결됨) 자동 감지와 쿨다운 공유였음 | §8 |
+| 디스크가 찬다 | `captures/`에 사진이 계속 쌓임 — 자동 정리 없음 | §8 |
 
 ## 1. 기동 실패 / 즉시 종료
 
@@ -65,7 +68,14 @@ lsusb                                    # 외장 허브가 보이는지
 dmesg | grep -iE "vbus|cdc_acm|new .*USB device"
 ```
 
-정상이면 `lsusb`에 `ARC Camera` + `QinHeng CH343` + `Huasheng HUB`가 보인다.
+정상이면 `lsusb`에 카메라 + CH343 시리얼 + 허브가 보인다. **허브 제조사는 개체마다 다르니
+이름을 조건으로 외우지 말고 "세 개가 다 보이는가"만 확인한다.** 2026-09-08 실측:
+
+```
+Bus 001 Device 002: ID 05e3:0608 Genesys Logic, Inc. Hub
+Bus 001 Device 003: ID 05a3:9230 ARC International Camera
+Bus 001 Device 004: ID 1a86:55d3 QinHeng Electronics USB Single Serial
+```
 
 ## 4. 서보 · PTZ
 

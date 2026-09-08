@@ -12,22 +12,25 @@
   - 17 keypoint (COCO 17점) 좌표 + confidence
   - 관절 각도 — 무릎(hip-knee-ankle) / 어깨 올림(elbow-shoulder-hip)
   - rep 카운트 — **스쿼트 · 숄더프레스 · 사이드 레터럴 레이즈** 3종
+  - **경비 모드** — 운동과 분리된 4번째 모드. 사람 감지 시 자동 촬영 + 로그
   - PTZ 서보 목표각 (yaw/pitch 2축) — 사람을 프레임에 유지
   - HTTP: MJPEG 라이브 스트림 + `stats.json` + 조작 API + 모바일 웹앱
 - **사용처**: 헬스케어 코치 로봇 — 운동 횟수 카운팅 + 자세 피드백 + 카메라 자동 추적.
   시연 시 관람객이 QR로 접속해 화면을 보고 카메라를 조작한다.
 - **실행 형태**: **단일 도커 컨테이너 / 단일 프로세스** (§2-3)
 
-### 0-1. 실측 현황 (2026-07-26 기준)
+### 0-1. 실측 현황 (2026-09-08 재측정)
 
 | 항목 | 실측 | 참고 기준 (pose 라인 합격선) |
 |---|---|---|
-| e2e FPS | **11.3~11.4** | ≥ 8 → 충족 |
-| 루프 지연 | ~90 ms | — |
-| RSS | ~215 MB | ≪ 2.4 GB → 충족 |
-| CPU (4코어 합산 100% 기준) | **~83%** | — (여유 17%) |
-| SoC 온도 | 51~73°C | ≤ 70°C → **추론 지속 시 초과 관측** |
+| e2e FPS | **11.3** (10.5~11.6) | ≥ 8 → 충족 |
+| 루프 지연 | ~90 ms (84.8~129.8) | — |
+| RSS | **~101 MB** | ≪ 2.4 GB → 충족 |
+| CPU (4코어 합산 100% 기준) | **~84%** (78.4~86.5) | — (여유 16%) |
+| SoC 온도 | 60°C (기동 30분 이내) / 과거 최고 73°C | ≤ 70°C → **추론 지속 시 초과 관측** |
 | dropped_frames | 0 | 0 → 충족 |
+
+> 30초·15회 폴링 평균. RSS는 과거 문서의 ~215 MB에서 ~101 MB로 정정됐다(재측정값이 맞다).
 
 FPS 천장 ~11.4는 **invoke(추론) 바운드**다. 근거와 개선 레버는
 [`09_performance_roadmap.md`](09_performance_roadmap.md).
@@ -107,6 +110,9 @@ UNO Q에 물려 쓰고 있어서, 서보 버스 어댑터도 같은 허브에 �
 - 시간(deg/s) 기준 제어 — PC(29 FPS)와 UNO Q(11 FPS)에서 같은 각속도
 - 시작 시 서보 자동 중앙 정렬 / 서보 없을 때 graceful degrade
 - 웹 `:8080/app` 단일화 + 종목 3버튼 + 실기 카메라 연동 + 모바일 접속
+- **경비 모드** — 홈 정렬 → 5초 무장 → 사람 감지 자동 촬영 → 10초 미검출 홈 복귀.
+  수동 촬영·사진 갤러리 포함 (2026-09-08 실기 재확인)
+- **원격 접속(Tailscale Funnel)** — 같은 Wi-Fi가 아니어도 `/app` 접속 가능
 - `--idle-skip-draw` 게이팅 (뷰어 0명 시 인코딩 skip, 이득 ~0.1~0.3 fps)
 
 ### 4-2. 아직 신뢰할 수 없는 것 / 미측정
@@ -134,18 +140,20 @@ health_care_bot/
 │   ├── exercise_counter.py  RepCounter + Squat/OverheadPress/LateralRaise
 │   ├── ptz_controller.py  PTZ 추적 + 손실 복구 + 서보 직결
 │   ├── st3215_bus.py      ST3215 프로토콜 저수준 드라이버
-│   ├── http_server.py     MJPEG + stats.json + /api/* + /app 서빙
-│   └── app_state.py       세션 상태 + 운영자 PIN 제어권 lock
-├── web/dist/index.html    ★ 현재 /app으로 서빙되는 애플 "Fluid" 정적 페이지
-├── web/src/               Vite+React 시안 6종 (현재 서빙 안 됨)
+│   ├── http_server.py     MJPEG + stats.json + /api/* + /app + /captures 서빙
+│   ├── app_state.py       세션 상태 + 운영자 PIN 제어권 lock + 경비 모드 상태
+│   └── guard_capture.py   경비 모드: 사람 감지 판정 + JPEG 저장 + 로그
+├── web/dist/index.html    ★ /app으로 서빙되는 애플 "Fluid" 정적 페이지 — **확정 UI**
+├── web/src/               Vite+React 시안 6종 — **보관 계층, 서빙 안 함**
 ├── design_demos/          독립 HTML 시안 2종 (Fluid 원본 / Field Optics)
 ├── docker/                Dockerfile · requirements.txt · run.sh
 ├── models/                movenet_thunder_int8.tflite (git 미포함)
 ├── scripts/               벤치·도구 (런타임 아님)
 ├── ptz/sketch/            MCU 스케치 — 현재 미사용
-├── stl/                   짐벌 하우징 3D 모델
+├── 3d_model/              짐벌 하우징 3D 모델 (STEP/STL + 생성 스크립트)
+├── captures/              경비 모드 촬영 산출물 (jpg + guard_log.jsonl) — gitignore
 ├── docs/                  §6
-└── backup/                복원점 3개
+└── backup/                복원점 5개
 ```
 
 ## 6. 문서 지도
@@ -180,8 +188,10 @@ health_care_bot/
 | 문서 | 상태 |
 |---|---|
 | [`../web/ARCHITECTURE.md`](../web/ARCHITECTURE.md) | 웹 설계 근거(왜 PWA·왜 폴링·왜 PIN). 유효 |
-| [`../web/DESIGN.md`](../web/DESIGN.md) | 시안·서체·색 근거. **07-21 기준으로 오래됨**(CALM 1종으로 서술, 실제 6종) |
-| [`../APP_GUIDE.md`](../APP_GUIDE.md) | React 시절 실행 가이드. `--mode auto`·푸시업 등 **낡은 서술 있음** |
+| [`../web/DESIGN.md`](../web/DESIGN.md) | 보관된 React 계층의 시안·서체·색 근거. **07-21 기준, 갱신 안 함** |
+| [`../APP_GUIDE.md`](../APP_GUIDE.md) | React 시절 실행 가이드. `--mode auto`·푸시업 등 **낡은 서술 있음. 갱신 안 함** |
+
+두 문서 모두 **보관물**이다. 현재 UI 기준은 [`05_web_ui_fluid.md`](05_web_ui_fluid.md) 하나다.
 
 ## 7. 문서 규칙
 

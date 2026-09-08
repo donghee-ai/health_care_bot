@@ -17,7 +17,7 @@
 | 중앙 기준 | tick **2047 = 180°** (EEPROM Homing_Offset 캘리브레이션) | 2026-07-17 |
 | yaw 가동범위 | **90 ~ 270°** (중앙 ±90) | 2026-07-17 실측 |
 | pitch 가동범위 | **150 ~ 210°** (중앙 ±30) | 2026-07-17 실측 |
-| pitch 방향 | 180에서 **줄어들면 카메라가 위**, 늘어나면 아래 → `pitch_sign=+1`이 정상 | 2026-07-19 실측 |
+| pitch 방향 | 현재 장착 상태에서는 **`pitch_sign=-1`이 정상** (2026-08-07 재조립 후 확정) | 2026-08-07 실측 |
 | yaw 방향 | 기본값 `yaw_sign=+1`이 정상 | 2026-07-19 실기 |
 | 회전 속도 | 569 tick/s ≈ 50 deg/s (옛 PWM 20 ms/° 등가) | 안전상 고정 |
 | 버스 | 1,000,000 baud, half-duplex 3선(VCC/GND/DATA) | |
@@ -128,8 +128,11 @@ py -3.14 scripts/test_st3215_serial.py --port COM9 --id 2 move 150
 
 | 카메라가 향하는 곳 | 조치 |
 |---|---|
-| **위** | `pitch_sign = +1` 유지 (현재 기본값) |
-| **아래** | `src/ptz_controller.py`의 `pitch_sign` 기본값을 `-1`로 (또는 `--pitch-sign -1`) |
+| **위** | `pitch_sign = -1` 유지 (**현재 기본값**) |
+| **아래** | `src/ptz_controller.py`의 `pitch_sign` 기본값을 `+1`로 (또는 `--pitch-sign 1`) |
+
+`run.sh`는 `PITCH_SIGN` 환경변수로도 받는다(기본 `-1`): `PITCH_SIGN=1 bash docker/run.sh`.
+기동 로그의 `sign : yaw=1 pitch=-1` 줄에서 실제 적용값을 확인할 수 있다.
 
 확인 후 중앙으로 되돌린다: `move 180`
 

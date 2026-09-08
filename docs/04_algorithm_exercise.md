@@ -152,6 +152,11 @@ left / right : 강제 선택
 select_counter(mode, squat_c, overhead_c, lateral_c)   # mode로만 결정
 ```
 
+모드는 네 가지다 — `squat` / `overhead` / `lateral` / **`guard`**. 앞의 셋만 운동이고
+`guard`(경비 모드)는 **rep 카운터가 없다**(`select_counter`가 `(None, "guard")` 반환).
+경비 모드의 감지·촬영 규칙은 [`02_http_api_and_stats.md`](02_http_api_and_stats.md) §1-2,
+카메라 거동은 [`03`](03_algorithm_ptz_tracking.md) §9-3에 있다.
+
 과거엔 몸 방향(세로=스쿼트 / 가로=푸시업)으로 자동 분류했지만, 지금 세 종목은 **전부
 정면·직립**이라 방향으로 구분이 안 된다. 그래서:
 
@@ -168,6 +173,7 @@ select_counter(mode, squat_c, overhead_c, lateral_c)   # mode로만 결정
 |---|---|---|---|
 | lower (스쿼트) | 무릎 중점 → 엉덩이 → 몸통 | 0.62 | 0.20 (넓게) |
 | upper (숄더/레터럴) | **어깨 중점** → 엉덩이 → 몸통 | 0.64 | 0.15 (좁게) |
+| guard (경비, 운동 아님) | 사람 중심(어깨+엉덩이 평균) | 0.50 | 0.20 |
 
 무릎을 계속 추적하면 상체 운동에서 **머리 위 팔이 잘린다.** 그래서 상체 모드는 어깨를
 추적하고 어깨를 화면 아래쪽에 둬 위쪽 공간을 남긴다. 상세:

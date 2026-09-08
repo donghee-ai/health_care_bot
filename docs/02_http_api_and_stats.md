@@ -14,10 +14,12 @@ GET  /                → 디버그 index (스트림 + stats 원본)
 GET  /stream.mjpg     → multipart MJPEG 라이브 스트림
 GET  /stats.json      → 전체 상태 (§3)
 GET  /app, /app/*     → web/dist 정적 서빙 (SPA 폴백)
+GET  /api/guard/captures  → 최근 촬영 목록      GET /captures/<file> → JPEG
 
 POST /api/control/claim | heartbeat | release     제어권
 POST /api/ptz                                     카메라 조작
-POST /api/mode                                    운동 종목
+POST /api/mode                                    운동 종목 + 경비 모드
+POST /api/guard/capture-now                       즉시 촬영
 POST /api/session/start | pause | resume | reset | finish
 ```
 
@@ -139,7 +141,10 @@ _CONTROL_LOCK_MS = 60_000     # claim 후 60초
   "overhead": { ... }, "lateral": { ... },   // 같은 형태, 항상 셋 다 존재
   "ptz": {
     "enabled": true, "state": "in_frame|edge|lost", "locked": false,
-    "miss_frames": 0, "target_norm": [0.49, 0.61],
+    "track_mode": "lower|upper|guard",     // 현재 추적 프레이밍 (03 §2)
+    "miss_frames": 0,
+    "guard_at_home": null,                 // guard 모드일 때만 bool, 아니면 null
+    "target_norm": [0.49, 0.61],
     "pan_cmds_total": 812, "tilt_cmds_total": 64,
     "sector_side": 0.1667, "grace_frames": 15, "auto_track_enabled": true,
     "pan_deg": 183.4, "tilt_deg": 178.9,
@@ -149,7 +154,7 @@ _CONTROL_LOCK_MS = 60_000     # claim 후 60초
   "last_event": { "exercise": "squat", "type": "REP", "rep_total": 7,
                   "min_angle_deg": 92.4, "frame": 1230 },   // rep 순간에만
   "dropped_frames": 0,
-  "rss_mb": 214.6,
+  "rss_mb": 100.9,               // 실측 ~101 MB (2026-09-08)
   "cpu_temp_c": 63.1,             // /sys/class/thermal/thermal_zone0/temp, 없으면 null
   "cpu_percent": 83.2,            // /proc/stat 차분 — 첫 호출은 항상 null
   "frame_ts_ms": 1753849123456.7,
@@ -216,4 +221,7 @@ _CONTROL_LOCK_MS = 60_000     # claim 후 60초
   가정하지 않았다.
 - 조회·스트림은 무인증이고, PIN은 평문 하드코딩이며, 현재 데모 페이지 구성에서는
   조작까지 사실상 무인증이다.
-- **로컬 LAN 전용.** 공개 인터넷에 노출하지 말 것. 시연 전 PIN 교체 권장.
+- **기본 전제는 로컬 LAN 전용이다.** 시연 전 PIN 교체 권장.
+- **예외: Tailscale Funnel**(`README.md` §3.2)을 켜면 이 서버가 그대로 공개 인터넷에
+  노출된다. 위 무인증 특성이 하나도 바뀌지 않은 채 외부로 열리는 것이므로, **보여줄 때만
+  켜고 끝나면 반드시 끈다**(`sudo tailscale funnel --https=443 off`).

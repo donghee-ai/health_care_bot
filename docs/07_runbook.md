@@ -10,11 +10,11 @@
 
 ```bash
 # 디바이스에서 (평소 이 한 줄)
-ssh arduino@192.168.0.45
+ssh arduino@192.168.0.50
 cd ~/health_care_bot && bash docker/run.sh
 
 # 접속
-http://192.168.0.45:8080/app
+http://192.168.0.50:8080/app
 
 # 내리기
 docker stop health-care-bot
@@ -25,7 +25,8 @@ docker stop health-care-bot
 | 항목 | 값 |
 |---|---|
 | 호스트 | `unoq-korea01` / 사용자 `arduino` |
-| IP | `192.168.0.45` (DHCP — 바뀌면 `adb shell "hostname -I"`로 재확인) |
+| IP | `192.168.0.50` (DHCP — 바뀌면 `adb shell "hostname -I"`로 재확인) |
+| Tailscale | `100.127.115.4` / `unoq-korea01.tailf89de1.ts.net` (§7) |
 | 앱 루트 | `/home/arduino/health_care_bot` (git 저장소 아님 — 파일 복사 배포) |
 | 런타임 | Docker 컨테이너 `health-care-bot:22.04` |
 | adb serial | `1204329696` |
@@ -33,7 +34,7 @@ docker stop health-care-bot
 **SSH가 기본이다** (2026-07-19에 키 등록 완료 — 비번 없이 붙는다).
 
 ```powershell
-ssh arduino@192.168.0.45
+ssh arduino@192.168.0.50
 ```
 
 > **SSH는 네트워크로 붙으므로 PC-USB 연결이 필요 없다.** adb를 쓰려고 USB-C를 물고 있으면
@@ -72,6 +73,11 @@ for v in /sys/class/video4linux/video*; do echo "$(basename $v) $(cat $v/name)";
 | 2026-07-11 | (연결 없음) | video0·1 |
 | 2026-07-19 | video0·1 | video2·3 |
 | 2026-07-26 | **video2** | (나머지) |
+| **2026-09-08** | **video0·1** | video2(encoder)·3(decoder) |
+
+2026-07-26과 2026-09-08이 정확히 반대다. **표를 규칙으로 읽지 말 것** — 이 표는 "번호가
+실제로 뒤집힌다"는 증거이지 조회표가 아니다. `run.sh`의 이름 기반 자동 탐색에 맡기는 게
+정답이다(2026-09-08 실기: `camera : /dev/video0 (--camera 0)`으로 정상 선택됨).
 
 **서보 어댑터(CH343)** — 커널/드라이버에 따라 `ttyACM`으로도 `ttyUSB`로도 잡힌다. UNO Q는
 CDC-ACM이라 **`/dev/ttyACM0`**.
@@ -93,8 +99,8 @@ bash docker/run.sh --shell          # 디버그 셸로 진입
 
 | 대상 | URL |
 |---|---|
-| 웹앱 (뷰어=운영자, 공유 제어권) | `http://192.168.0.45:8080/app` |
-| 디버그 페이지 (스트림 + 원본 stats) | `http://192.168.0.45:8080/` |
+| 웹앱 (뷰어=운영자, 공유 제어권) | `http://192.168.0.50:8080/app` |
+| 디버그 페이지 (스트림 + 원본 stats) | `http://192.168.0.50:8080/` |
 
 ### 3-1. `run.sh`가 해주는 것
 
@@ -108,8 +114,9 @@ bash docker/run.sh --shell          # 디버그 셸로 진입
 ### 3-2. 기동 로그에서 반드시 볼 것
 
 ```
-  camera : /dev/video2 (--camera 2)
+  camera : /dev/video0 (--camera 0)
   serial : /dev/ttyACM0            ← (MISSING — PTZ disabled)면 PTZ가 조용히 꺼진다
+  sign   : yaw=1 pitch=-1          ← pitch 부호(06 §0). 뒤집혀 있으면 위아래가 반대로 돈다
   actual : 640x480                 ← 카메라가 실제로 열렸는지
   [ptz] 버스 연결 ... 중앙(180/180) 정렬 후 시작
 ```
@@ -168,7 +175,7 @@ py -3.14 scripts/ptz_camera_track.py --port COM9 --camera 0 --drive
 ### 5-1. SSH (권장)
 
 ```bash
-tar -czf - src | ssh arduino@192.168.0.45 'cd ~/health_care_bot && rm -rf src && tar -xzf -'
+tar -czf - src | ssh arduino@192.168.0.50 'cd ~/health_care_bot && rm -rf src && tar -xzf -'
 ```
 
 ### 5-2. adb (USB 연결 시) — 순서가 정해져 있다
@@ -196,7 +203,7 @@ $APP = "/home/arduino/health_care_bot"
 ## 6. 웹 재배포
 
 ```bash
-tar -czf - -C web dist | ssh arduino@192.168.0.45 \
+tar -czf - -C web dist | ssh arduino@192.168.0.50 \
   'cd ~/health_care_bot/web && rm -rf dist && tar -xzf -'
 ```
 
@@ -207,20 +214,77 @@ tar -czf - -C web dist | ssh arduino@192.168.0.45 \
 
 ## 7. 프론트만 따로 개발할 때
 
-카메라·모델 없이 UI만 고칠 때는 목업 백엔드를 쓴다.
+**확정 UI인 Fluid는 빌드가 없다.** `web/dist/index.html` 한 파일을 고치는 것이 전부이고,
+가장 빠른 확인 경로는 실기에 올려 브라우저를 새로고침하는 것이다(§6 — 컨테이너 재시작 불필요).
+
+로봇 없이 UI만 보려면 목업 백엔드를 쓴다. `mock_serve.py`는 `/app`도 같이 서빙하므로
+**React 없이 Fluid를 그대로 열 수 있다**:
 
 ```bash
-python scripts/mock_serve.py                  # http://localhost:8090
+python scripts/mock_serve.py     # http://localhost:8090/app  ← Fluid가 그대로 뜬다
+```
+
+> ⚠️ **`scripts/mock_serve.py`는 현재 깨져 있다** — 2026-07-26에 삭제된 `PushupCounter`를
+> import해 실행 즉시 `ImportError: cannot import name 'PushupCounter'`가 난다.
+> 쓰려면 그 import와 사용처를 현재 카운터(`SquatCounter`/`OverheadPressCounter`/
+> `LateralRaiseCounter`)로 바꿔야 한다. (2026-09-08 확인)
+
+**보관된 React 계층**(`web/src/`)을 볼 때만 Vite를 쓴다. 이건 정상 작업 흐름이 아니다:
+
+```bash
 cd web && VITE_BACKEND_URL=http://localhost:8090 npm run dev   # http://localhost:5173
 ```
 
-`vite.config.ts`가 `/stats.json`·`/stream.mjpg`·`/api/*`를 `VITE_BACKEND_URL`로 프록시하므로
-CORS를 신경 쓸 필요가 없다. 실제 UNO Q를 가리키게 하면 진짜 카메라 스트림을 보며 개발할 수도
-있다.
+`npm run build`는 **절대 무심코 돌리지 말 것** — `web/dist/index.html`(= 확정 UI Fluid)을
+덮어쓴다. [`05_web_ui_fluid.md`](05_web_ui_fluid.md) §9-1.
 
-## 8. 세션 종료 체크리스트
+## 8. 원격 접속 — 같은 Wi-Fi가 아닐 때 (Tailscale Funnel)
+
+로봇 Wi-Fi에 붙을 수 없는 곳(다른 망, 모바일 데이터)에서 `/app`을 열어야 할 때 쓴다.
+
+```bash
+# 최초 1회
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up                       # 출력되는 URL을 폰/PC로 열어 로그인
+
+# 보여줄 때만
+sudo tailscale funnel --bg 8080         # https://unoq-korea01.tailf89de1.ts.net/app
+sudo tailscale funnel --https=443 off   # 끝나면 반드시 끈다
+```
+
+Tailscale 기기끼리는 Funnel 없이 Tailscale IP로 직접 붙는다(`tailscale ip -4`,
+2026-09-08 기준 `100.127.115.4`).
+
+> 🚨 **Funnel은 이 서버를 공개 인터넷에 그대로 연다.** 조회·스트림은 무인증이고 PIN은
+> 평문 하드코딩이며 데모 페이지는 사실상 무인증 조작이다([`02`](02_http_api_and_stats.md) §6).
+> **켠 채로 두지 말 것.**
+>
+> 프론트는 API 주소를 `location.origin`으로 쓴다 — 포트를 하드코딩하면 Funnel(외부 포트가
+> 8080이 아님)에서 스트림·상태가 안 들어온다. 과거 실제로 밟은 함정이다.
+
+## 9. 경비 모드 운영
+
+```bash
+# 촬영물 위치 (컨테이너 밖, 호스트에 그대로 쌓인다)
+ls ~/health_care_bot/captures/*.jpg | wc -l
+du -sh ~/health_care_bot/captures
+tail -3 ~/health_care_bot/captures/guard_log.jsonl
+```
+
+- 웹 `/app` → ⚙ → `경비 모드`로 전환하면 홈 정렬 후 5초 뒤 무장된다.
+- **자동 정리 로직이 없다.** 파일이 계속 쌓이므로 주기적으로 비워야 한다
+  (2026-09-08 기준 207장 / 17 MB, 루트 파티션 73% 사용).
+- 사람 사진이므로 `captures/`는 `.gitignore` 대상이다. **밖으로 복사할 때 주의.**
+
+```bash
+rm ~/health_care_bot/captures/*.jpg          # 사진만 비우기 (로그는 유지)
+```
+
+## 10. 세션 종료 체크리스트
 
 - [ ] `docker stop health-care-bot` (카메라·서보 torque 해제)
 - [ ] 서보를 손으로 옮겼거나 재조립했으면 [`06`](06_hardware_calibration.md) §4 절차
 - [ ] 작업 내용을 `docs/history/`에 기록 (**커밋 전에 히스토리 먼저** — 프로젝트 관례)
 - [ ] 새로 밟은 함정이 있으면 `docs/issues/`에 한 파일로 추가
+- [ ] Funnel을 켰으면 `sudo tailscale funnel --https=443 off` (§8)
+- [ ] 경비 모드를 썼으면 `captures/` 정리 여부 판단 (§9)

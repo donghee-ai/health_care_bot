@@ -84,7 +84,7 @@ FPS/각도/REPS/PTZ는 웹 UI가 `stats.json`으로 이미 표시하므로 `putT
         ┌──────────┬──────────┬─────────┴────┬────────────┬──────────┐
         v          v          v              v            v          v
   pose_utils    angles   exercise_counter  ptz_controller  http_server  app_state
-        ^          |                              |            |          ^
+        ^          |            guard_capture     |            |          ^
         └──────────┘                              v            └──────────┘
      (angles가 KP 상수만 참조)              st3215_bus        (init_app 주입)
                                                  |
@@ -122,6 +122,7 @@ init_app(ptz=ptz, squat_c=..., overhead_c=..., lateral_c=..., avg_fps_fn=...)
 | 서보 목표각 `pan_deg`/`tilt_deg` | `PTZController` | 프로세스 | 서보의 실제 위치가 아니라 **우리가 명령한 각도** |
 | 추적 스무딩·복구 단계 | `PTZController` 내부 필드 | 프로세스 | 재검출 시 `_reset_recovery()`로 통째 취소 |
 | 세션(mode/status/target) | `app_state._session` | 프로세스 | DB 없음. 재시작 시 초기화 |
+| 경비 모드 무장/쿨다운/수동촬영 | `app_state._guard` | 프로세스 | 촬영 **파일**은 `captures/`에 영구 |
 | 운영자 제어권 lock | `app_state._control_*` | 60초 (heartbeat 연장) | 재시작 시 초기화 → 좀비 lock이 안 남는 게 오히려 안전 |
 | 최신 JPEG / stats | `http_server` 모듈 전역 + `_state_lock` | 다음 프레임까지 | 뷰어 수는 별도 lock |
 
@@ -170,6 +171,7 @@ ptz_controller.update()      추적 판정 → 목표각(deg) 결정
 | **서보 무응답** (전원 없음/배선) | PTZ disabled | `[ptz] 서보 무응답 (...) - 서보 전원/버스 케이블 확인` |
 | 서보 쓰기 오류 (런타임) | 해당 명령만 실패, 카운트 안 됨 | `[ptz] 서보 쓰기 오류` |
 | `web/dist` 없음 | `/app`이 503 + 빌드 힌트 | (요청 시) |
+| `captures/` 쓰기 실패 | 해당 촬영만 실패, 경비 모드는 계속 | `[guard]` 로그 없음 |
 | `/proc`·`/sys` 없음 (PC) | 텔레메트리 필드가 `null` | 없음 |
 | keypoint conf 미달 | 각도 `None` → 카운터는 상태 유지하고 넘어감 | 로그 `L=? R=?` |
 | 미검출 지속 | PTZ 복구 사다리 진행 | 로그 `COAST`/`BACK`/`CENTER` |
@@ -198,5 +200,5 @@ ptz_controller.update()      추적 판정 → 목표각(deg) 결정
 - **`st3215_bus.py::set_id` docstring**이 "실제 반영은 전원 재투입 후"라고 적고 있는데,
   실기에서는 **즉시 반영**된다
   ([`issues/2026-07-16_01`](issues/2026-07-16_01_servo_id_change_takes_effect_immediately.md)).
-- `pose_utils.py`·`exercise_counter.py`·`Dockerfile` 주석에 "squat + pushup"이라는 옛
-  표현이 남아 있다(동작 무해).
+- `pose_utils.py`·`exercise_counter.py`·`angles.py`·`main.py`·`Dockerfile` 주석에
+  "squat + pushup"이라는 옛 표현이 남아 있다(동작 무해, 2026-09-08 재확인).

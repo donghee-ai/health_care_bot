@@ -8,32 +8,38 @@
 
 ## 0. 가장 먼저 알아야 할 것
 
+**Fluid가 이 로봇의 확정 UI다** (2026-09-08 확정). 후보가 아니라 고정이고, 웹 작업은
+전부 이 파일에서 한다. `web/src/`의 React 계층은 **보관 상태**이며 되살릴 계획이 없다.
+
 **`/app`은 React 앱이 아니다.** 자체 포함(self-contained) 정적 HTML **파일 하나**다.
 CSS·JS·QR SVG가 전부 그 안에 인라인되어 있고, 빌드 단계도 의존성도 없다.
 
 ```
-web/dist/index.html   ← 이 파일 하나가 /app 이다  (약 32 KB, <title>Health Care Bot — Fluid</title>)
+web/dist/index.html   ← 이 파일 하나가 /app 이다  (약 48 KB, <title>Health Care Bot — Fluid</title>)
 ```
 
-`web/src/`의 Vite+React 코드베이스는 **지금 서빙되지 않는다** — 빌드 산출물이 이 Fluid
-파일로 덮여 있기 때문이다. 그래서 **`npm run build`를 돌리면 `/app`이 통째로 바뀐다.**
+`web/src/`의 Vite+React 코드베이스는 **서빙되지 않는 보관 계층**이다 — 빌드 산출물 경로가
+이 Fluid 파일로 덮여 있다. 그래서 **`npm run build`를 돌리면 `/app`이 통째로 깨진다.**
 §9-1을 반드시 먼저 읽을 것.
 
 | 경로 | 정체 |
 |---|---|
-| `web/dist/index.html` | **현재 `/app`** — Fluid (배포본) |
-| `design_demos/live_apple-design.html` | Fluid **원본/작업본** |
+| `web/dist/index.html` | **현재 `/app`** — Fluid (배포본, 유일한 최신본) |
+| `design_demos/live_apple-design.html` | Fluid 초기 원본 — **2026-07-26에서 멈춰 있다(§9)** |
 | `web/dist/index.html.stock.bak` | 이전 stock React 빌드 백업 |
 | `design_demos/live_frontend-design.html` | 다른 시안 "Field Optics" (서빙 안 함) |
 
-접속: `http://192.168.0.45:8080/app` — 뷰어·운영자 구분 없이 **접속하면 바로 조작 가능**
+> ⚠️ **`design_demos/live_apple-design.html`는 더 이상 작업본이 아니다.** 경비 모드 UI·QR
+> 생성기·`location.origin` 수정이 전부 빠진 옛 버전이다. 되돌리기용으로 쓰면 안 된다(§9).
+
+접속: `http://192.168.0.50:8080/app` — 뷰어·운영자 구분 없이 **접속하면 바로 조작 가능**
 (§4).
 
 ## 1. 화면 구성
 
 ```
 ┌───────────────────────────────────────────┐
-│ ● Health Care Bot   [Live · Robot] [⚙]    │  상단바: 상태 pill + 설정 기어
+│ ● Health Care Bot  [Live · Robot] [⊞][⚙] │  상단바: 상태 pill + 모바일QR + 설정
 ├───────────────────────────────────────────┤
 │                                           │
 │         [로봇 카메라 /stream.mjpg]         │  뷰포트
@@ -44,6 +50,7 @@ web/dist/index.html   ← 이 파일 하나가 /app 이다  (약 32 KB, <title>H
 │             "좋은 깊이입니다. 올라오세요"   │  자세 피드백 한 줄
 ├───────────────────────────────────────────┤
 │  [ 스쿼트 | 숄더프레스 | 레터럴 ]          │  종목 세그먼트 → POST /api/mode
+│    (⚙ 안에 [운동 모드 | 경비 모드] 전환)    │  경비 모드는 설정 시트에서 분리
 ├───────────────────────────────────────────┤
 │  카메라 · PTZ                    [EDGE]    │
 │  [ 자동 추적 | 직접 조작 ]                 │
@@ -55,8 +62,13 @@ web/dist/index.html   ← 이 파일 하나가 /app 이다  (약 32 KB, <title>H
 **자동/수동 토글이 같은 자리를 공유한다** — 자동 추적일 때는 조종할 게 없으니 그 공간에
 텔레메트리를 보여주고, 직접 조작으로 바꾸면 조이스틱이 나타난다.
 
-**⚙ → QR 시트**: 모바일 접속용 QR(인라인 SVG)과 URL(`location.origin + pathname`)을 띄운다.
-복사 버튼 포함.
+**⊞ → 모바일 접속 시트**: QR과 URL(`location.origin + pathname`)을 띄운다. 복사 버튼 포함.
+**QR은 페이지 안에서 그 자리에 인코딩한다**(`qrSvg()`, 버전1~4·ECC-M·마스크0 고정, 외부
+CDN 없음). 예전엔 특정 IP로 미리 렌더링해둔 정적 SVG라 IP가 바뀌어도 안 바뀌는 함정이었다.
+
+**⚙ → 설정 시트**: `[운동 모드 | 경비 모드]` 전환 세그먼트. 경비 모드에서는 진행 링이
+무장 잔여 초 → 촬영 매수로 바뀌고, "🖼 사진 보기"(촬영 갤러리 시트 + 라이트박스)와
+"● 직접 촬영"(`POST /api/guard/capture-now`) 버튼이 PTZ 패널 좌측에 붙는다.
 
 ## 2. 라이브 판정과 데모 폴백
 
@@ -131,6 +143,8 @@ setInterval(() => post("/api/control/heartbeat"), 30000)   // 30초마다 연장
 
 > **보안상 의미**: `/stats.json`·`/stream.mjpg`는 애초에 무인증이고, 여기에 더해 PTZ·세션
 > 조작까지 사실상 무인증이다. **로컬 LAN 전용**이라는 전제가 깨지면 안 된다.
+> Tailscale Funnel(`README.md` §3.2)을 켜는 순간 이 전제가 깨진 채 공개 인터넷에 열린다 —
+> 보여줄 때만 켜고 반드시 끌 것.
 
 ## 5. 조작 경로
 
@@ -190,15 +204,22 @@ catch(err){ /* one bad frame must never freeze the live loop */ }
 
 ## 9. 수정과 배포
 
-작업본은 `design_demos/live_apple-design.html`이고, 배포본이 `web/dist/index.html`이다.
-둘을 같이 맞춰두는 것이 관례다(현재 동일 내용).
+**배포본이자 유일한 최신본은 `web/dist/index.html` 하나다. 여기를 직접 고친다.**
+
+`design_demos/live_apple-design.html`은 한때 작업본이었지만 **2026-07-26 이후 갱신이
+끊겼다.** 두 파일은 더 이상 같지 않다:
+
+| 파일 | 크기 | 최종 | 경비 모드 UI |
+|---|---|---|---|
+| `web/dist/index.html` | 49,022 B | 2026-08-08 | **있음** |
+| `design_demos/live_apple-design.html` | 32,358 B | 2026-07-26 | **없음** |
 
 JS가 전부 인라인이라 빌드가 없는 대신 **문법 오류를 잡아줄 단계도 없다.** 배포 전에
 `<script>` 블록만 임시 파일로 떼어 `node --check`로 확인하거나(과거 세션의 검증 방식),
 최소한 브라우저 콘솔을 한 번 열어볼 것.
 
 ```bash
-tar -czf - -C web dist | ssh arduino@192.168.0.45 \
+tar -czf - -C web dist | ssh arduino@192.168.0.50 \
   'cd ~/health_care_bot/web && rm -rf dist && tar -xzf -'
 ```
 
@@ -211,12 +232,16 @@ tar -czf - -C web dist | ssh arduino@192.168.0.45 \
 React 앱으로 교체된다.** 되돌리는 방법:
 
 ```bash
-cp design_demos/live_apple-design.html web/dist/index.html   # Fluid 복원
-cp web/dist/index.html.stock.bak       web/dist/index.html   # 반대로 stock 복원
+cp web/dist/index.html.stock.bak       web/dist/index.html   # stock React 복원
 ```
 
-React 시안(6종, `web/src/versions/`)을 다시 보고 싶을 때만 빌드하고, 끝나면 Fluid를
-복원하는 흐름으로 쓴다.
+> 🚨 **`cp design_demos/live_apple-design.html web/dist/index.html`을 실행하지 말 것.**
+> 경비 모드 UI·QR 생성기·`location.origin` 수정이 통째로 롤백된다. Fluid를 되돌려야 하면
+> `backup/2026-08-08_guard_mode_qr_captures/`나 git에서 꺼낸다.
+
+**정상 작업 흐름에 `npm run build`는 없다.** Fluid는 빌드 없이 파일만 고쳐 올리면 된다(§9).
+React 시안을 굳이 다시 볼 일이 생기면 빌드 전에 현재 `web/dist/index.html`을 반드시 따로
+복사해두고, 끝나면 되돌린다.
 
 ## 10. 함정
 
@@ -235,6 +260,8 @@ React 시안(6종, `web/src/versions/`)을 다시 보고 싶을 때만 빌드하
 - Fluid 제작 경위: [`history/2026-07-26_01`](history/2026-07-26_01_apple_design_ui_live_and_8080_unify.md)
 - 종목 3버튼이 생긴 경위: [`history/2026-07-26_02`](history/2026-07-26_02_pushup_removed_overhead_lateral_added.md)
 
-> React 시안 6종(CALM·PULSE·AURORA·CORE·CARE·LIVE)과 서체·색 결정 근거는
-> [`../web/DESIGN.md`](../web/DESIGN.md)에 있다. 단 그 문서는 07-21 기준이라 "CALM 1종"으로
-> 오래됐고(실제 레지스트리는 6종), **현재 서빙되지 않는 계층**이다.
+> **보관 계층 안내** — React 시안 6종(`registry.ts` 기준 `calm` · `rehab` · `session` ·
+> `pulse` · `aurora` · `core`)과 서체·색 결정 근거는 [`../web/DESIGN.md`](../web/DESIGN.md)에
+> 있다. 그 문서는 07-21 기준이라 "CALM 1종"으로 서술돼 오래됐고, `registry.ts` 주석도
+> "CALM은 확정 UI가 아니라 검토 중인 후보"라고 적혀 있는데 **이 전제는 폐기됐다** —
+> 확정 UI는 Fluid다. 두 문서 모두 갱신되지 않은 보관물로만 취급할 것.
