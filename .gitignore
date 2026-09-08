@@ -21,3 +21,7 @@ captures/
 Thumbs.db
 .vscode/
 .idea/
+
+# 제3자 CAD - 벤더 배포 도면은 재배포하지 않는다 (필요시 제조사 페이지에서 직접 받을 것)
+*.step
+*.STEP
