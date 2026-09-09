@@ -425,10 +425,24 @@ body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,"Segoe U
       return await r.json();
     }catch(e){ return {ok:false}; }
   }
+  // 운영자 PIN. 서버 기본값은 1234이고, HCB_OPERATOR_PIN 환경변수로 바뀌어 있으면
+  // 서버가 invalid_pin을 돌려준다 - 그때만 한 번 물어보고 localStorage에 기억한다.
+  // 기본값 그대로 쓰는 평소에는 아무것도 묻지 않는다(= 지금까지의 동작 그대로).
+  const PIN_KEY="hcb.operator_pin", PIN_DEFAULT="1234";
+  let opPin = PIN_DEFAULT;
+  try{ opPin = localStorage.getItem(PIN_KEY) || PIN_DEFAULT; }catch(e){}
+
   async function ensureControl(){
     if(!LIVE) return true;
     if(hasCtrl) return true;
-    const r = await post("/api/control/claim",{pin:"1234"});
+    let r = await post("/api/control/claim",{pin:opPin});
+    if(r && !r.ok && r.error==="invalid_pin"){
+      const typed = prompt("운영자 PIN (서버에서 변경됨)");
+      if(!typed) return false;
+      opPin = typed.trim();
+      r = await post("/api/control/claim",{pin:opPin});
+      if(r && r.ok){ try{ localStorage.setItem(PIN_KEY, opPin); }catch(e){} }
+    }
     if(r && r.ok){ hasCtrl=true; if(!hbTimer) hbTimer=setInterval(()=>post("/api/control/heartbeat"),30000); return true; }
     return false;
   }

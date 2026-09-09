@@ -105,7 +105,7 @@ idle ──start──> running ──pause──> paused ──resume──> ru
 ## 2. 제어권 모델
 
 ```python
-_operator_pin = "1234"        # src/app_state.py — 평문 하드코딩
+_operator_pin = "1234"        # src/app_state.py 기본값. HCB_OPERATOR_PIN으로 덮어씀
 _CONTROL_LOCK_MS = 60_000     # claim 후 60초
 ```
 

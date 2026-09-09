@@ -116,6 +116,18 @@ HCB_OPERATOR_PIN=8317 bash docker/run.sh
 **기본값은 그대로 `1234`** 이므로 지금까지의 동작은 변하지 않는다.
 (이건 인증이 아니라 오조작 방지다 — [`02`](../02_http_api_and_stats.md) §6 그대로.)
 
+> **푸시 직전 리뷰에서 잡은 것** — 서버만 고쳐서는 반쪽이었다. 배포 UI가
+> `post("/api/control/claim",{pin:"1234"})`로 **PIN을 하드코딩**하고 PIN 입력
+> 화면이 아예 없어서(§4 "누구나 조종"), `HCB_OPERATOR_PIN`을 실제로 바꾸면
+> **PTZ·모드전환·촬영 버튼이 전부 조용히 먹통**이 된다. README에 "시연 전 교체
+> 권장"이라고 써 놓고 그대로 하면 데모가 깨지는 상태였다.
+>
+> `ensureControl()`이 `invalid_pin`을 받았을 때**만** `prompt()`로 한 번 묻고
+> `localStorage`(`hcb.operator_pin`)에 기억하도록 고쳤다. **기본 PIN을 쓰는
+> 평소 경로는 요청 한 번으로 끝나고 아무것도 묻지 않는다** — 기존 동작 무변화.
+> 검증: 기본 서버에 `1234` → `ok:true` / PIN 교체 서버에 `1234` → `invalid_pin`,
+> 이어서 `8317` → `ok:true`. `node --check`(docs/05 §9 절차) 통과.
+
 ### 3-4. 나머지
 
 - `scripts/mock_serve.py`: `OverheadPressCounter`/`LateralRaiseCounter`로 교체,
@@ -143,6 +155,8 @@ HCB_OPERATOR_PIN=8317 bash docker/run.sh
 | 경로 탈출 | `/app/../../src/http_server.py` | **403** |
 | 둘 다 없음 | 가짜 경로 2개 | 503 `web_not_built` |
 | PIN 기본/오버라이드/공백 | import 후 값 확인 | `1234` / `8317` / `1234` |
+| PIN claim 왕복 | 기본 서버·교체 서버에 HTTP POST | `ok` / `invalid_pin` → `ok` |
+| 배포 UI 문법 | `<script>` 추출 후 `node --check` | PASS |
 | `run.sh` 문법 | `bash -n` | OK |
 | `mock_serve.py` | 실제 기동 + HTTP 확인 | OK |
 

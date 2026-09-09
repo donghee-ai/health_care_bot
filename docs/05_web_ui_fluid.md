@@ -129,14 +129,16 @@ CDN 없음). 예전엔 특정 IP로 미리 렌더링해둔 정적 SVG라 IP가 �
 
 ```javascript
 clientId = "hcb-demo"                       // 모든 클라이언트가 동일
-post("/api/control/claim", {pin: "1234"})   // 자동 claim
+post("/api/control/claim", {pin: opPin})    // 자동 claim (opPin 기본 "1234")
 setInterval(() => post("/api/control/heartbeat"), 30000)   // 30초마다 연장
 ```
 
 서버의 제어권 lock은 원래 "운영자 1명"을 전제로 만들어졌지만(60초 lock, PIN), 이 페이지는
 **모든 접속자가 같은 `client_id`를 공유**하도록 만들어져 있다. 그 결과:
 
-- PIN 입력 화면이 없다 — 접속하면 바로 조작된다.
+- PIN 입력 화면이 없다 — 접속하면 바로 조작된다. 단 서버가 `HCB_OPERATOR_PIN`으로
+  PIN을 바꿔 놓았으면 `invalid_pin`이 돌아오고, **그때만** `prompt()`로 한 번 묻고
+  `localStorage`(`hcb.operator_pin`)에 기억한다. 기본값을 쓰는 평소에는 안 묻는다.
 - 여러 사람이 동시에 조작할 수 있고 **마지막 명령이 이긴다**(격리 없음).
 - 시연 편의를 위한 의도적 선택이다. 조작을 한 사람에게 묶어야 한다면 `clientId`를 기기별
   랜덤값으로 바꾸고 PIN 입력 UI를 붙여야 한다.

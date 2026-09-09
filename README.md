@@ -110,7 +110,7 @@ sudo tailscale funnel --https=443 off   # 다 보여준 뒤 반드시 끌 것
 접속(외부): `https://<기기이름>.<tailnet>.ts.net/app` — 실제 주소는 기기에서 `tailscale status`로 확인(공개 리포라 적지 않는다)
 접속(Tailscale 기기끼리, Funnel 없이): UNO Q의 Tailscale IP로 직접 (`tailscale ip -4`로 확인)
 
-> **이 앱은 PIN(`1234`) 하나 말고 실질적 인증이 없다.** Funnel이 켜진 동안엔 그
+> **이 앱은 PIN(기본 `1234`) 하나 말고 실질적 인증이 없다.** Funnel이 켜진 동안엔 그
 > 링크를 아는 누구나 카메라·PTZ·경비모드 사진을 볼 수 있다 — 데모 보여줄 때만
 > 켰다 끄는 용도로 쓸 것, 상시 노출 금지.
 >
@@ -263,7 +263,8 @@ PTZ 파라미터의 의미와 튜닝 지침: [`docs/03_algorithm_ptz_tracking.md
   조회·스트림은 무인증이다. **로컬 LAN 외부 노출 금지.** 기본 PIN은 `1234`이고
   **코드 수정 없이 `HCB_OPERATOR_PIN` 환경변수로 바꾼다**(`docker/run.sh`가 컨테이너로
   전달한다). 시연 전 교체 권장:
-  `HCB_OPERATOR_PIN=8317 bash docker/run.sh` **Tailscale Funnel(§3.2)도 이 규칙에서 예외가 아니다** —
+  `HCB_OPERATOR_PIN=8317 bash docker/run.sh`
+  바꾸면 `/app`이 접속 시 PIN을 한 번 물어보고 브라우저에 기억한다(기본값이면 안 묻는다). **Tailscale Funnel(§3.2)도 이 규칙에서 예외가 아니다** —
   켜져 있는 동안엔 인터넷 전체에 무인증으로 노출되는 것과 같으니 데모 끝나면
   반드시 끌 것.
 - **UNO Q는 USB 호스트 VBUS가 꺼져 있다** — 버스파워 허브/장치는 인식되지 않는다.

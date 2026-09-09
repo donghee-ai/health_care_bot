@@ -78,10 +78,11 @@ python3 src/main.py \
 | 디버그 페이지(기존) | `http://<UNO_Q_IP>:8080/` |
 
 운영자 PIN 기본값은 `1234` (`src/app_state.py`의 `_operator_pin`). 실제
-시연 전에 반드시 바꿀 것.
+시연 전에 반드시 바꿀 것 — `HCB_OPERATOR_PIN=<새 PIN> bash docker/run.sh`
+(코드 수정 불필요, 2026-09-09 추가).
 
-`web/dist`가 없는 상태로 `/app`에 접속하면 백엔드가 503 + 안내 JSON
-(`"hint": "cd web && npm install && npm run build"`)을 반환한다.
+`/app`은 커밋된 `web/app/index.html`이 서빙한다(2026-09-09부터). `web/dist`는
+React 시안의 빌드 산출물일 뿐이라 없어도 `/app`은 정상이다.
 
 ### 2.2 프론트만 따로 개발할 때 (`npm run dev`)
 
