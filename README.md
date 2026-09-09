@@ -6,6 +6,17 @@ Arduino UNO Q (Qualcomm Dragonwing QRB2210, Quad-core Cortex-A53 + STM32U585) �
 카메라로 자세를 보고 **운동 횟수를 세면서**, **PTZ 짐벌로 사람을 따라가고**,
 같은 프로세스가 **모바일 웹앱까지 서빙**한다.
 
+<table>
+<tr>
+<td width="40%" valign="top"><img src="docs/assets/robot.jpg" alt="짐벌 하우징 실물 — 상단 카메라 헤드와 육각 베이스"></td>
+<td width="60%" valign="top"><img src="docs/assets/squat-counting.gif" alt="웹앱에서 스쿼트를 세는 화면 — 스켈레톤 오버레이와 카운터"></td>
+</tr>
+<tr>
+<td align="center"><sub><b>짐벌 하우징 v8.43</b><br>헤드에 카메라, ST3215 2축(yaw·pitch)<br>UNO Q·허브·서보 어댑터가 베이스에 들어간다</sub></td>
+<td align="center"><sub><b>스쿼트 카운팅 — <code>:8080/app</code></b><br>MoveNet 17 keypoint 오버레이 · 3렙(0→3) · 링은 목표 대비 진행률<br><b>배속 없는 실시간</b>이고, 화면의 9.7 FPS · 96 ms · 69 °C · CPU 84 %가 그때 실측값이다</sub></td>
+</tr>
+</table>
+
 > **문서 지도** — 이 README는 진입점이고, 상세는 `docs/00~09`가 담는다.
 > 먼저 [`docs/00_project_blueprint.md`](docs/00_project_blueprint.md)(청사진·현재 상태·문서 지도)를
 > 읽고 필요한 파트로 가면 된다. 전체 목록은 §5.
