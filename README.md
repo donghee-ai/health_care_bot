@@ -322,3 +322,8 @@ FPS를 올리는 유일한 큰 레버는 **NPU/DSP 델리게이트**(Hexagon HTP
 - 추론 모델: **MoveNet Thunder INT8** (`models/movenet_thunder_int8.tflite`, 7.1 MB) —
   기존 pose 라인 자산 재사용. **git에 포함되어 있어 clone하면 바로 쓸 수 있다**
   (갱신할 때만 `scripts/copy_model.sh`).
+- 서체(Pretendard·Gabarito)는 **SIL OFL 1.1**이고, OFL이 요구하는 라이선스 사본을
+  `web/public/fonts/licenses/`에 동봉했다.
+
+**재배포하는 남의 저작물 전체 목록과 요구 표기는 [`THIRD_PARTY.md`](THIRD_PARTY.md).**
+MoveNet의 CC BY 4.0 저작자 표시, 서체 OFL 표기, 벤더 CAD를 왜 뺐는지가 거기 있다.

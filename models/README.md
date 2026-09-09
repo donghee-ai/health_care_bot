@@ -1,7 +1,9 @@
 # models/
 
-추론 모델 자산. 본 폴더는 git에 모델 바이너리를 포함하지 않음 (용량/라이센스).
-실행 전 `scripts/copy_model.sh`로 복사:
+추론 모델 자산. **`movenet_thunder_int8.tflite`는 git에 포함되어 있다** — clone하면
+바로 쓸 수 있다. 출처·라이선스 표기는 [`../THIRD_PARTY.md`](../THIRD_PARTY.md) §2.
+
+자매 리포에서 모델을 갱신할 때만 아래를 쓴다:
 
 ```bash
 bash scripts/copy_model.sh
