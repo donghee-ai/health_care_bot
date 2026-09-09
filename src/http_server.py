@@ -4,7 +4,7 @@
   GET  /            → 디버그 index HTML
   GET  /stream.mjpg → multipart MJPEG
   GET  /stats.json  → 최신 상태 JSON (app 상태 포함)
-  GET  /app/*       → 빌드된 React 앱 (web/dist) 정적 서빙
+  GET  /app/*       → 정적 웹앱 서빙 (web/app 우선, 없으면 web/dist 폴백)
   POST /api/*       → PTZ/세션/제어권 API (APP_PLAN.md §9 데이터 계약)
 
 로컬 네트워크 전용 - 공개 인터넷 노출 금지. 운영자 mutation은
@@ -39,7 +39,12 @@ _overhead_c = None
 _lateral_c = None
 _avg_fps_fn = None
 
-_WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
+_WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
+# 서빙 우선순위: web/app (커밋된 배포본 - 자체포함 Fluid 정적 페이지)
+#            -> web/dist (Vite 빌드 산출물, gitignore 대상 - 있을 때만)
+# web/app이 먼저인 이유: `npm run build`가 dist/index.html을 stock React로
+# 덮어써도 배포 UI가 바뀌지 않는다. clone 직후에도 빌드 없이 /app이 뜬다.
+_WEB_DIRS = (_WEB_ROOT / "app", _WEB_ROOT / "dist")
 
 
 def init_app(ptz=None, squat_c=None, overhead_c=None, lateral_c=None, avg_fps_fn=None):
@@ -213,25 +218,41 @@ def _serve_capture(handler, url_path: str):
     handler.wfile.write(body)
 
 
+def _resolve_static(rel: str):
+    """`rel`을 _WEB_DIRS 순서대로 찾는다. 경로 이탈(../)은 None으로 거른다."""
+    for base in _WEB_DIRS:
+        try:
+            root = base.resolve()
+        except OSError:
+            continue
+        candidate = (base / rel).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            return False, None      # traversal 시도 - 403
+        if candidate.is_file():
+            return True, candidate
+    return True, None
+
+
 def _serve_static(handler, url_path: str):
-    """`/app` 이하 경로를 web/dist에서 서빙. 없으면 index.html로 폴백 (SPA)."""
+    """`/app` 이하를 web/app -> web/dist 순으로 서빙. 없으면 index.html 폴백 (SPA)."""
     rel = url_path[len('/app'):].lstrip('/')
     if not rel:
         rel = 'index.html'
-    candidate = (_WEB_DIST / rel).resolve()
-    try:
-        candidate.relative_to(_WEB_DIST.resolve())
-    except ValueError:
+    safe, candidate = _resolve_static(rel)
+    if not safe:
         handler.send_response(403)
         handler.end_headers()
         return
-    if not candidate.is_file():
-        candidate = _WEB_DIST / 'index.html'
-    if not candidate.is_file():
+    if candidate is None:
+        _, candidate = _resolve_static('index.html')
+    if candidate is None:
         _send_json(handler, 503, {
             "ok": False,
             "error": "web_not_built",
-            "hint": "cd web && npm install && npm run build",
+            "hint": "web/app/index.html 이 있어야 한다 (리포에 커밋되어 있음). "
+                    "React 시안을 서빙하려면 cd web && npm install && npm run build",
         })
         return
     ctype = mimetypes.guess_type(str(candidate))[0] or 'application/octet-stream'

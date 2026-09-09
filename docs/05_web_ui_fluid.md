@@ -15,18 +15,18 @@
 CSS·JS·QR SVG가 전부 그 안에 인라인되어 있고, 빌드 단계도 의존성도 없다.
 
 ```
-web/dist/index.html   ← 이 파일 하나가 /app 이다  (약 48 KB, <title>Health Care Bot — Fluid</title>)
+web/app/index.html   ← 이 파일 하나가 /app 이다  (약 48 KB, <title>Health Care Bot — Fluid</title>)
 ```
 
-`web/src/`의 Vite+React 코드베이스는 **서빙되지 않는 보관 계층**이다 — 빌드 산출물 경로가
-이 Fluid 파일로 덮여 있다. 그래서 **`npm run build`를 돌리면 `/app`이 통째로 깨진다.**
-§9-1을 반드시 먼저 읽을 것.
+`web/src/`의 Vite+React 코드베이스는 **서빙되지 않는 보관 계층**이고, 그 빌드 산출물은
+`web/dist/`(gitignore)에 떨어진다. 서버는 `web/app` → `web/dist` 순으로 찾으므로
+**`npm run build`를 돌려도 `/app`은 Fluid 그대로다**(§9-1).
 
 | 경로 | 정체 |
 |---|---|
-| `web/dist/index.html` | **현재 `/app`** — Fluid (배포본, 유일한 최신본) |
+| `web/app/index.html` | **현재 `/app`** — Fluid (배포본, 유일한 최신본, **커밋됨**) |
 | `design_demos/live_apple-design.html` | Fluid 초기 원본 — **2026-07-26에서 멈춰 있다(§9)** |
-| `web/dist/index.html.stock.bak` | 이전 stock React 빌드 백업 |
+| `web/dist/` | React 시안 빌드 산출물 — gitignore. `/app/assets/*`로만 노출 |
 | `design_demos/live_frontend-design.html` | 다른 시안 "Field Optics" (서빙 안 함) |
 
 > ⚠️ **`design_demos/live_apple-design.html`는 더 이상 작업본이 아니다.** 경비 모드 UI·QR
@@ -204,14 +204,18 @@ catch(err){ /* one bad frame must never freeze the live loop */ }
 
 ## 9. 수정과 배포
 
-**배포본이자 유일한 최신본은 `web/dist/index.html` 하나다. 여기를 직접 고친다.**
+**배포본이자 유일한 최신본은 `web/app/index.html` 하나다. 여기를 직접 고친다.**
+
+> 2026-09-09 이전에는 `web/dist/index.html`이었다. `dist`가 gitignore 대상이라
+> **클론하면 `/app`이 503**이 되는 문제가 있어 커밋되는 `web/app/`으로 옮겼다.
+> 서버는 `web/app` → `web/dist` 순으로 찾으므로 아직 옮기지 않은 디바이스도 그대로 뜬다.
 
 `design_demos/live_apple-design.html`은 한때 작업본이었지만 **2026-07-26 이후 갱신이
 끊겼다.** 두 파일은 더 이상 같지 않다:
 
 | 파일 | 크기 | 최종 | 경비 모드 UI |
 |---|---|---|---|
-| `web/dist/index.html` | 49,022 B | 2026-08-08 | **있음** |
+| `web/app/index.html` | 49,022 B | 2026-08-08 | **있음** |
 | `design_demos/live_apple-design.html` | 32,358 B | 2026-07-26 | **없음** |
 
 JS가 전부 인라인이라 빌드가 없는 대신 **문법 오류를 잡아줄 단계도 없다.** 배포 전에
@@ -219,36 +223,35 @@ JS가 전부 인라인이라 빌드가 없는 대신 **문법 오류를 잡아�
 최소한 브라우저 콘솔을 한 번 열어볼 것.
 
 ```bash
-tar -czf - -C web dist | ssh arduino@192.168.0.50 \
-  'cd ~/health_care_bot/web && rm -rf dist && tar -xzf -'
+# 배포본은 자체포함 단일 파일(48 KB)이라 이것 하나만 올리면 된다
+scp web/app/index.html arduino@192.168.0.50:~/health_care_bot/web/app/index.html
 ```
+
+디바이스를 git으로 관리한다면 `git pull`만으로도 반영된다 — 배포본이 커밋되기 때문이다.
 
 `http_server`가 **매 요청마다 디스크에서 읽으므로 컨테이너 재시작이 필요 없다.** 브라우저
 새로고침만으로 반영된다(`.html`은 `Cache-Control: no-store`).
 
-### 9-1. `npm run build`가 이 페이지를 덮는다
+### 9-1. `npm run build`는 더 이상 이 페이지를 덮지 않는다
 
-`web/dist/index.html`은 Vite 빌드의 산출물 경로다. React 쪽을 빌드하면 **Fluid가 stock
-React 앱으로 교체된다.** 되돌리는 방법:
+예전에는 배포본이 Vite 빌드의 산출물 경로(`web/dist/index.html`)에 있어서, React 쪽을
+빌드하면 **Fluid가 stock React 앱으로 교체됐다.** 배포본을 `web/app/`으로 분리하고 서버가
+`web/app`을 먼저 보게 하면서 이 함정은 사라졌다 — 빌드해도 `/app`은 Fluid 그대로다.
 
-```bash
-cp web/dist/index.html.stock.bak       web/dist/index.html   # stock React 복원
-```
-
-> 🚨 **`cp design_demos/live_apple-design.html web/dist/index.html`을 실행하지 말 것.**
+> 🚨 **`cp design_demos/live_apple-design.html web/app/index.html`을 실행하지 말 것.**
 > 경비 모드 UI·QR 생성기·`location.origin` 수정이 통째로 롤백된다. Fluid를 되돌려야 하면
 > `backup/2026-08-08_guard_mode_qr_captures/`나 git에서 꺼낸다.
 
-**정상 작업 흐름에 `npm run build`는 없다.** Fluid는 빌드 없이 파일만 고쳐 올리면 된다(§9).
-React 시안을 굳이 다시 볼 일이 생기면 빌드 전에 현재 `web/dist/index.html`을 반드시 따로
-복사해두고, 끝나면 되돌린다.
+**정상 작업 흐름에 `npm run build`는 여전히 없다.** Fluid는 빌드 없이 파일만 고쳐 올리면
+된다(§9). 빌드는 React 시안(`web/src/`)을 다시 볼 때만 필요하고, 그 산출물은
+`/app/assets/*`로만 노출된다.
 
 ## 10. 함정
 
 | 함정 | 내용 |
 |---|---|
 | **폰만 접속 안 됨** | `ERR_ADDRESS_UNREACHABLE`는 서버 문제가 **아니다** — 폰의 랜덤 MAC이 원인. 진단 순서는 [`08_troubleshooting.md`](08_troubleshooting.md) §2 |
-| **`npm run build`** | §9-1 — Fluid가 덮인다 |
+| **`npm run build`** | §9-1 — 예전엔 Fluid를 덮었다. `web/app/` 분리로 해소(2026-09-09) |
 | **CDN 금지** | 로봇은 LAN 전용이라 외부 폰트/스크립트 CDN에 못 나간다. Fluid는 시스템 폰트만 쓰므로 안전 |
 | **`dist` push 중첩** | remote `web/dist`가 있는 채로 `adb push`하면 `dist/dist/`로 중첩된다. `rm -rf` 먼저 |
 | 스트림만 안 보임 | `--idle-skip-draw`로 실행 중이고 뷰어가 0명이었다면 첫 JPEG가 늦게 뜬다 |

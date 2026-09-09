@@ -1,7 +1,7 @@
 """MoveNet 17 keypoint 상수 + letterbox 전후처리 + draw helpers.
 
 기존 pose/scripts/infer_camera_pose.py에서 재사용 - 본 라인은
-헬스케어 봇 통합 (squat + pushup + ptz) 용도로만 추출.
+헬스케어 봇 통합 (squat / overhead / lateral / guard + ptz) 용도로만 추출.
 """
 import cv2
 import numpy as np

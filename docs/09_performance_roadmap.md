@@ -130,9 +130,9 @@ CPU에 `asimddp`가 없어 INT8 고속 커널을 못 쓰는 상황이므로, INT
 | **스쿼트 2샘플 rep** | 검출이 끊긴 구간에서 가짜 rep이 성립한다. 후보: DOWN 구간에 유효 샘플 N개 요구 → [`04`](04_algorithm_exercise.md) §6 |
 | **`coast_frames`가 프레임 기준** | 시간 기준(`coast_duration_s`)으로 바꾸고 감쇠도 시간당으로 환산 → [`03`](03_algorithm_ptz_tracking.md) §12 |
 | `coast_fov_deg` 추정값 | 60°는 실측이 아니다. 보정법은 [`03`](03_algorithm_ptz_tracking.md) §11 |
-| **Dockerfile CMD 낡음** | `--mode auto`가 남아 있어 손으로 `docker run`하면 즉시 종료 → [`01`](01_architecture.md) §7-1 |
+| ~~**Dockerfile CMD 낡음**~~ | **해소(2026-09-09)** — `--mode squat`로 정정 |
 | **PTZ 쿨다운 기본값이 두 군데** | `ptz_controller.py`의 80 ms는 죽은 값이고 `main.py` CLI의 250 ms가 실동작값이다. 코드만 읽으면 오해한다 → [`03`](03_algorithm_ptz_tracking.md) §7 |
-| **`scripts/mock_serve.py` 깨짐** | 07-26에 삭제된 `PushupCounter`를 import해 즉시 `ImportError`. 프론트 목업 개발 경로가 막혀 있다 → [`07`](07_runbook.md) §7 |
+| ~~**`scripts/mock_serve.py` 깨짐**~~ | **해소(2026-09-09)** — 카운터 3종으로 교체, 기동 확인 |
 | 서보 실제각 미확인 | 목표각과 어긋나도 감지 못 함 |
 | 다중 접속 부하 | `/stream.mjpg`가 커넥션당 스레드 1개 점유. 실측 안 됨 |
 

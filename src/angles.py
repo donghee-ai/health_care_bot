@@ -62,9 +62,11 @@ def pick_angle(left, right, mode="better"):
 
 def body_orientation(kp, conf_th=0.3):
     """어깨중점-엉덩이중점 라인의 수직성으로 자세 분류.
-       returns 'vertical' (서있음 → squat) | 'horizontal' (엎드림 → pushup) | None.
+       returns 'vertical' (서있음) | 'horizontal' (엎드림) | None.
 
-    pushup 자세에서 어깨↔엉덩이 라인은 수평에 가까움 (|dy| < |dx|).
+    엎드린 자세에서 어깨↔엉덩이 라인은 수평에 가까움 (|dy| < |dx|).
+    (푸시업 자동 분류용으로 만들었고 푸시업은 2026-07-26에 제거됐다.
+     현재는 텔레메트리 `orientation` 필드에만 쓰인다.)
     squat 자세에서는 수직 (|dy| > |dx|).
     """
     ls, rs = KP["left_shoulder"], KP["right_shoulder"]

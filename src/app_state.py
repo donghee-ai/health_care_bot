@@ -5,6 +5,7 @@ http_server.py의 API handler가 이 모듈의 함수를 호출해 상태를 읽
 스레드 안전을 위해 모든 접근은 전역 lock 하나로 직렬화한다 (호출 빈도가
 낮아 - 사람이 누르는 버튼 수준 - lock contention은 문제되지 않음).
 """
+import os
 import threading
 import time
 import uuid
@@ -12,7 +13,11 @@ import uuid
 _lock = threading.Lock()
 
 # === 운영자 제어권 lock ===
-_operator_pin = "1234"
+# PIN은 데모 중 오조작 방지용이지 인증이 아니다 (docs/02 §6 보안 모델).
+# 공개 리포에 기본값이 박혀 있으므로 시연 전에는 HCB_OPERATOR_PIN으로 바꿀 것.
+# docker/run.sh가 이 환경변수를 컨테이너로 전달한다.
+_DEFAULT_OPERATOR_PIN = "1234"
+_operator_pin = os.environ.get("HCB_OPERATOR_PIN", "").strip() or _DEFAULT_OPERATOR_PIN
 _control_client_id = None
 _control_expires_ms = 0.0
 _CONTROL_LOCK_MS = 60_000.0

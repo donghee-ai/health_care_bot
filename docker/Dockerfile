@@ -1,4 +1,4 @@
-# health_care_bot — 단일 컨테이너 (squat + pushup + ptz)
+# health_care_bot — 단일 컨테이너 (squat / overhead / lateral / guard + ptz)
 # 기반: 기존 unoq-companion-robot/pose/docker/Dockerfile.pose 와 호환 (디바이스 venv-unoq 일치).
 FROM ubuntu:22.04
 
@@ -39,7 +39,7 @@ WORKDIR /work
 EXPOSE 8080
 CMD ["python3", "/work/src/main.py", \
      "/work/models/movenet_thunder_int8.tflite", \
-     "--mode", "auto", \
+     "--mode", "squat", \
      "--camera", "0", \
      "--serial", "/dev/ttyUSB0", \
      "--serve", "8080"]

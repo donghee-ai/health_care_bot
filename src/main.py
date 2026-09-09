@@ -4,7 +4,7 @@
 흐름:
   카메라 → MoveNet Thunder INT8 → 17 keypoint
       ├─ 각도 계산 (knee / elbow)
-      ├─ rep counter (mode에 따라 squat / pushup, auto는 자세 자동 분류)
+      ├─ rep counter (mode에 따라 squat / overhead / lateral - 자동 분류 없음)
       ├─ PTZ controller (추적점: 스쿼트는 무릎 가중 중심, 그 외 상반신 중심 → 프레임-아웃 → Arduino 시리얼 명령)
       └─ HTTP serve (MJPEG + stats.json)
 """
@@ -165,7 +165,7 @@ def parse_args():
     ap.add_argument("--max-frames", type=int, default=0)
     ap.add_argument("--print-every", type=int, default=15)
 
-    # 임계 (squat/pushup별 default가 다르지만 같은 플래그로 노출)
+    # 임계 (종목별 default가 다르므로 종목마다 별도 플래그로 노출)
     ap.add_argument("--squat-down-th", type=float, default=100.0)
     ap.add_argument("--squat-up-th", type=float, default=140.0)
     ap.add_argument("--overhead-down-th", type=float, default=60.0)

@@ -1,6 +1,7 @@
 """수동 검증용 목업 서버 — 카메라/모델 없이 http_server.py + app_state.py 통합 확인.
 실제 배포에는 쓰이지 않음. `python scripts/mock_serve.py` 후 web/ 에서
-`VITE_BACKEND_URL=http://localhost:8090 npm run dev` 로 프론트 확인.
+`VITE_BACKEND_URL=http://localhost:8090 npm run dev` 로 React 시안 확인.
+배포 UI(Fluid)는 빌드가 없으므로 http://localhost:8090/app 을 바로 열면 된다.
 """
 import sys
 import time
@@ -15,17 +16,19 @@ import numpy as np
 import app_state
 from http_server import update_live_state, start_server, init_app
 from ptz_controller import PTZController
-from exercise_counter import SquatCounter, PushupCounter
+from exercise_counter import SquatCounter, OverheadPressCounter, LateralRaiseCounter
 
 
 def main():
     ptz = PTZController()
     ptz.open()
     squat_c = SquatCounter()
-    pushup_c = PushupCounter()
-    app_state.set_mode("auto")
+    overhead_c = OverheadPressCounter()
+    lateral_c = LateralRaiseCounter()
+    app_state.set_mode("squat")
 
-    init_app(ptz=ptz, squat_c=squat_c, pushup_c=pushup_c, avg_fps_fn=lambda: 27.4)
+    init_app(ptz=ptz, squat_c=squat_c, overhead_c=overhead_c,
+             lateral_c=lateral_c, avg_fps_fn=lambda: 27.4)
     start_server(8090)
     print("mock server on http://localhost:8090 (/app, /stats.json, /stream.mjpg)")
 
@@ -38,12 +41,13 @@ def main():
             "fps": 27.4,
             "loop_ms": 36.5,
             "mode": app_state.get_mode(),
-            "exercise_active": "squat",
+            "exercise_active": app_state.get_mode(),
             "orientation": "vertical",
             "angle_deg": {"left": 92.0, "right": 94.0, "used": 93.0},
             "person_center_norm": [0.5, 0.5],
             "squat": squat_c.snapshot(),
-            "pushup": pushup_c.snapshot(),
+            "overhead": overhead_c.snapshot(),
+            "lateral": lateral_c.snapshot(),
             "last_ptz_cmd": None,
             "dropped_frames": 0,
             "rss_mb": 210.5,

@@ -21,8 +21,10 @@ UNO Q (Linux, arm64)
         └── [스레드] 커넥션당 1개             /stream.mjpg는 연결이 살아있는 동안 점유
 ```
 
-**웹 프론트엔드에는 런타임이 없다.** 빌드는 개발 PC에서 하고, 컨테이너는 `web/dist`의
-정적 파일만 읽는다. 컨테이너 이미지에 Node가 아예 없다.
+**웹 프론트엔드에는 런타임이 없다.** 배포 UI(`web/app/index.html`)는 자체포함 정적
+HTML 한 장이라 빌드 단계 자체가 없고, 컨테이너는 그 파일을 읽어 내보낼 뿐이다.
+React 시안(`web/src/`)을 빌드할 때만 개발 PC에서 Vite를 돌린다 — 컨테이너 이미지에
+Node가 아예 없다.
 
 ## 1. 스레드 모델
 
@@ -170,7 +172,7 @@ ptz_controller.update()      추적 판정 → 목표각(deg) 결정
 | 포트 열기 실패 | PTZ disabled | `[ptz] 포트 열기 실패 (...)` |
 | **서보 무응답** (전원 없음/배선) | PTZ disabled | `[ptz] 서보 무응답 (...) - 서보 전원/버스 케이블 확인` |
 | 서보 쓰기 오류 (런타임) | 해당 명령만 실패, 카운트 안 됨 | `[ptz] 서보 쓰기 오류` |
-| `web/dist` 없음 | `/app`이 503 + 빌드 힌트 | (요청 시) |
+| `web/app`·`web/dist` 둘 다 없음 | `/app`이 503 + 힌트 (`web/app`은 커밋되므로 정상 클론에선 발생 안 함) | (요청 시) |
 | `captures/` 쓰기 실패 | 해당 촬영만 실패, 경비 모드는 계속 | `[guard]` 로그 없음 |
 | `/proc`·`/sys` 없음 (PC) | 텔레메트리 필드가 `null` | 없음 |
 | keypoint conf 미달 | 각도 `None` → 카운터는 상태 유지하고 넘어감 | 로그 `L=? R=?` |
@@ -193,12 +195,13 @@ ptz_controller.update()      추적 판정 → 목표각(deg) 결정
 
 ### 7-1. 코드에 남은 낡은 것 (동작에 영향)
 
-- **`docker/Dockerfile`의 `CMD`가 오래됐다** — `--mode auto --serial /dev/ttyUSB0`.
-  `auto`는 07-26에 제거됐으므로 `run.sh` 없이 `docker run`만 하면
-  `invalid choice: 'auto'`로 즉시 종료된다. 실사용 경로(`run.sh`)는 명령을 덮어쓰므로
-  지금은 드러나지 않지만, **손으로 `docker run`할 때 밟는 함정**이다.
+- ~~`docker/Dockerfile`의 `CMD`가 오래됐다~~ — `--mode auto`라 `run.sh` 없이
+  `docker run`만 하면 `invalid choice: 'auto'`로 즉시 종료됐다.
+  **2026-09-09에 `--mode squat`으로 정정**(run.sh가 넘기던 값과 동일).
 - **`st3215_bus.py::set_id` docstring**이 "실제 반영은 전원 재투입 후"라고 적고 있는데,
   실기에서는 **즉시 반영**된다
   ([`issues/2026-07-16_01`](issues/2026-07-16_01_servo_id_change_takes_effect_immediately.md)).
-- `pose_utils.py`·`exercise_counter.py`·`angles.py`·`main.py`·`Dockerfile` 주석에
-  "squat + pushup"이라는 옛 표현이 남아 있다(동작 무해, 2026-09-08 재확인).
+- ~~`pose_utils.py`·`exercise_counter.py`·`angles.py`·`main.py`·`Dockerfile` 주석의
+  "squat + pushup" 옛 표현~~ — **2026-09-09 정리**. `angles.py`의
+  `classify_orientation`은 pushup 시절 유물이지만 함수 자체가 아직 쓰이므로
+  docstring에 그 경위를 남겨뒀다.

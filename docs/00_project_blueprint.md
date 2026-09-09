@@ -143,11 +143,12 @@ health_care_bot/
 │   ├── http_server.py     MJPEG + stats.json + /api/* + /app + /captures 서빙
 │   ├── app_state.py       세션 상태 + 운영자 PIN 제어권 lock + 경비 모드 상태
 │   └── guard_capture.py   경비 모드: 사람 감지 판정 + JPEG 저장 + 로그
-├── web/dist/index.html    ★ /app으로 서빙되는 애플 "Fluid" 정적 페이지 — **확정 UI**
+├── web/app/index.html     ★ /app으로 서빙되는 애플 "Fluid" 정적 페이지 — **확정 UI**(커밋됨)
 ├── web/src/               Vite+React 시안 6종 — **보관 계층, 서빙 안 함**
+├── web/dist/              Vite 빌드 산출물 — gitignore, 없어도 /app은 뜬다
 ├── design_demos/          독립 HTML 시안 2종 (Fluid 원본 / Field Optics)
 ├── docker/                Dockerfile · requirements.txt · run.sh
-├── models/                movenet_thunder_int8.tflite (git 미포함)
+├── models/                movenet_thunder_int8.tflite (7.1 MB, git 포함)
 ├── scripts/               벤치·도구 (런타임 아님)
 ├── ptz/sketch/            MCU 스케치 — 현재 미사용
 ├── 3d_model/              짐벌 하우징 3D 모델 (STEP/STL + 생성 스크립트)
@@ -182,6 +183,8 @@ health_care_bot/
 
 세션 인수인계는 history의 `*_session_handoff.md`가 담당한다. 가장 최신:
 [`history/2026-08-08_01_session_handoff.md`](history/2026-08-08_01_session_handoff.md).
+리포 구조/배포 경로가 바뀐 최신 건은
+[`history/2026-09-09_01`](history/2026-09-09_01_repo_clonability_fixed_deploy_ui_committed.md).
 
 ### 6-3. 웹 프론트 부속 문서
 

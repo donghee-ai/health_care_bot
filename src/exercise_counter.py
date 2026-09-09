@@ -1,4 +1,4 @@
-"""Rep counter state machine - squat (무릎 각도) / pushup (팔꿈치 각도) 공통 base.
+"""Rep counter state machine - squat (무릎 각도) / overhead·lateral (어깨 올림 각도) 공통 base.
 
 설계:
   UP (각도 > up_th) ↔ DOWN (각도 < down_th)
@@ -92,7 +92,7 @@ def OverheadPressCounter(down_th: float = 60.0, up_th: float = 140.0,
                          min_dwell_ms: float = 200.0) -> RepCounter:
     """어깨 올림 각도 elbow-shoulder-hip 기반 (팔 위로 / 숄더프레스).
     down<60 → 팔 내림(휴식), up>140 → 머리 위로 편 상태. 정면에서 강건 —
-    푸시업과 달리 팔이 이미지 평면 안(수직)에서 움직여 각도가 안 뭉개진다."""
+    (제거된) 푸시업과 달리 팔이 이미지 평면 안(수직)에서 움직여 각도가 안 뭉개진다."""
     return RepCounter(down_th=down_th, up_th=up_th, name="overhead", min_dwell_ms=min_dwell_ms)
 
 

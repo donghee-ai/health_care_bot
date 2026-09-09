@@ -77,7 +77,7 @@ Arduino UNO Q (Qualcomm Dragonwing QRB2210, Quad-core Cortex-A53 + STM32U585) �
 ### 3.1 디바이스(UNO Q) — 실제 운용
 
 ```bash
-ssh arduino@192.168.0.50              # 키 등록됨, 비번 없음
+ssh arduino@192.168.0.50              # 사설 LAN. 접속 정보는 기기에서 확인
 cd ~/health_care_bot
 bash docker/run.sh                    # 카메라/서보 노드 자동 탐색 + 기동
 ```
@@ -134,7 +134,10 @@ py -3.14 scripts/ptz_camera_track.py --port COM9 --camera 0 --drive
 (CH343, baud 1,000,000)이고, **서보 외부전원(6~12.6V)이 없으면 포트는 열리는데 ID 전부
 무응답**이 된다.
 
-### 3.4 모델 준비 (한 번만)
+### 3.4 모델 준비 — 보통 불필요
+
+`models/movenet_thunder_int8.tflite`(7.1 MB)는 **리포에 커밋되어 있다.** clone하면 바로 있다.
+자매 리포에서 모델을 갱신할 때만 아래를 쓴다.
 
 ```bash
 bash scripts/copy_model.sh    # ../unoq-companion-robot/pose/models/ -> models/
@@ -147,6 +150,10 @@ bash scripts/copy_model.sh    # ../unoq-companion-robot/pose/models/ -> models/
 ```
 health_care_bot/
 ├── README.md                   (본 문서 — 진입점)
+├── APP_GUIDE.md                React 시절 실행 가이드 (일부 낡음)
+├── APP_PLAN.md                 초기 앱 기획서 (07-08, 데이터 계약의 출처)
+├── health_care_bot_mvp_screen_plan.md   MVP 화면 기획 (07-11)
+├── app_reference.png           앱 레퍼런스 스크린샷
 ├── src/                        런타임 (컨테이너가 실행)
 │   ├── main.py                 통합 진입점: 루프 + CLI + 텔레메트리
 │   ├── pose_utils.py           keypoint 상수 / letterbox / 중심점 헬퍼 / draw
@@ -158,9 +165,11 @@ health_care_bot/
 │   ├── app_state.py            세션 상태 + 운영자 PIN 제어권 lock + 경비 모드 상태
 │   └── guard_capture.py        경비 모드: 사람 감지 판정 + JPEG 저장 + 로그
 ├── captures/                    경비 모드 촬영 산출물 (jpg + guard_log.jsonl) — gitignore 대상
-├── web/                        Vite + React PWA (시안 6종) — 빌드 산출물 web/dist
-│   ├── dist/index.html         ★ 현재 /app으로 서빙되는 애플 "Fluid" 정적 페이지
-│   ├── dist/index.html.stock.bak   stock React 빌드 백업
+├── web/
+│   ├── app/index.html          ★ /app으로 서빙되는 애플 "Fluid" 정적 페이지 — **확정 UI**
+│   │                             자체포함 단일 파일(48 KB). 빌드 대상이 아니고 여기를 직접 고친다
+│   ├── src/                    Vite + React PWA 시안 6종 — 보관 계층, 서빙 안 함
+│   ├── dist/                   위 시안의 빌드 산출물 — gitignore. **없어도 /app은 정상**
 │   ├── ARCHITECTURE.md         웹 설계 근거 ("왜 이렇게")
 │   └── DESIGN.md               시안·서체·색 결정 근거 (07-21 기준, 일부 오래됨)
 ├── design_demos/               독립 HTML 시안 2종 (Fluid 원본 / Field Optics)
@@ -173,12 +182,14 @@ health_care_bot/
 │   ├── calibrate_st3215.py     중앙 재캘리브레이션 / 긴급정지
 │   ├── test_st3215_serial.py   ping/read/move/sweep/set-id/dual-spin
 │   ├── ptz_camera_track.py     PTZ 단독 테스트 (작업본, v1/v2 백업 동봉)
-│   ├── mock_serve.py           카메라·모델 없이 프론트만 검증
+│   ├── mock_serve.py           카메라·모델 없이 API/프론트만 검증 (실기 아님)
 │   └── copy_model.sh
 ├── ptz/sketch/                 MCU 스케치 — 현재 미사용 (MCU 트랙 보류)
-├── stl/                        짐벌 하우징 3D 모델
+├── 3d_model/                   짐벌 하우징 3D 모델
+│   ├── source/ · 3mf/ · stl/   생성 스크립트 / 출력용 / 메시
+│   └── validation/ · preview/  간섭 검증 스키마 / 미리보기
 ├── docs/                       ← 아래 §5
-└── backup/                     복원점 3개 (pre_web_integration 등)
+└── backup/                     복원점 5개 (pre_web_integration 등)
 ```
 
 ---
@@ -198,7 +209,8 @@ health_care_bot/
 | 08 | [`08_troubleshooting.md`](docs/08_troubleshooting.md) | 증상 → 원인 함정 색인 |
 | 09 | [`09_performance_roadmap.md`](docs/09_performance_roadmap.md) | 성능 실측 + 다음 할 일 우선순위 |
 | — | [`docs/history/`](docs/history/) · [`docs/issues/`](docs/issues/) | 기록(append-only) — 한 사건 한 파일 |
-| — | [`docs/history/2026-08-08_01_session_handoff.md`](docs/history/2026-08-08_01_session_handoff.md) | **가장 최신 세션 맥락** — 경비 모드, PTZ 버그 3건, Tailscale 원격접속 |
+| — | [`docs/history/2026-09-09_01`](docs/history/2026-09-09_01_repo_clonability_fixed_deploy_ui_committed.md) | **가장 최신** — 배포 UI를 `web/app/`으로 커밋, Dockerfile CMD·mock_serve 수정 |
+| — | [`docs/history/2026-08-08_01_session_handoff.md`](docs/history/2026-08-08_01_session_handoff.md) | 실기 맥락 — 경비 모드, PTZ 버그 3건, Tailscale 원격접속 |
 | — | [`web/ARCHITECTURE.md`](web/ARCHITECTURE.md) · [`APP_GUIDE.md`](APP_GUIDE.md) | 웹앱 설계 근거 / React 시절 실행 가이드(일부 낡음) |
 | — | [`donghee-ai/unoq-edge-ai-lines`](https://github.com/donghee-ai/unoq-edge-ai-lines) | **자매 리포**(private) — Vision/ASR/Pose/KWS 4 라인 PoC + 실측. 본 라인의 모델 출처 |
 
@@ -247,9 +259,11 @@ PTZ 파라미터의 의미와 튜닝 지침: [`docs/03_algorithm_ptz_tracking.md
 - **ST3215는 공장 출하 ID가 모두 1** — 체인에 물리기 전에 낱개로 yaw=1/pitch=2를
   나눠 기록해야 한다. ID 변경은 **즉시 반영**된다("전원 재투입 필요"라는 일반 SDK
   문구와 다름): [`docs/issues/2026-07-16_01`](docs/issues/2026-07-16_01_servo_id_change_takes_effect_immediately.md)
-- **HTTP는 인증이 없다.** 운영자 mutation만 PIN(`1234`, `src/app_state.py`) 기반
-  제어권 lock으로 막혀 있고 조회·스트림은 무인증이다. **로컬 LAN 외부 노출 금지**,
-  시연 전 PIN 교체 권장. **Tailscale Funnel(§3.2)도 이 규칙에서 예외가 아니다** —
+- **HTTP는 인증이 없다.** 운영자 mutation만 PIN 기반 제어권 lock으로 막혀 있고
+  조회·스트림은 무인증이다. **로컬 LAN 외부 노출 금지.** 기본 PIN은 `1234`이고
+  **코드 수정 없이 `HCB_OPERATOR_PIN` 환경변수로 바꾼다**(`docker/run.sh`가 컨테이너로
+  전달한다). 시연 전 교체 권장:
+  `HCB_OPERATOR_PIN=8317 bash docker/run.sh` **Tailscale Funnel(§3.2)도 이 규칙에서 예외가 아니다** —
   켜져 있는 동안엔 인터넷 전체에 무인증으로 노출되는 것과 같으니 데모 끝나면
   반드시 끌 것.
 - **UNO Q는 USB 호스트 VBUS가 꺼져 있다** — 버스파워 허브/장치는 인식되지 않는다.
@@ -264,7 +278,7 @@ PTZ 파라미터의 의미와 튜닝 지침: [`docs/03_algorithm_ptz_tracking.md
 |---|---|---|
 | 디바이스 노드 번호 | `/dev/videoN`·`ttyACM/ttyUSB`가 부팅마다 바뀐다. 번호를 규칙으로 적지 말고 **이름으로 식별** | [issues/2026-07-19_01](docs/issues/2026-07-19_01_device_node_names_are_not_stable.md) |
 | argparse ↔ run.sh 동기화 | `--mode` choices를 바꾸면 `run.sh`(및 Dockerfile CMD)의 하드코딩 인자도 같이 고쳐야 한다. `--rm`이라 `docker logs`에 안 남음 | [history/2026-07-26_02](docs/history/2026-07-26_02_pushup_removed_overhead_lateral_added.md) |
-| `npm run build`가 Fluid를 덮음 | `/app`은 자체포함 정적 HTML이라 React 빌드 대상이 아니다. 빌드하면 stock으로 덮인다 | [docs/05](docs/05_web_ui_fluid.md) §9-1 |
+| ~~`npm run build`가 Fluid를 덮음~~ | **해소(2026-09-09).** 배포본을 `web/app/`으로 분리하고 서버가 `web/app` → `web/dist` 순으로 찾게 했다. 빌드해도 `/app`은 그대로 | [docs/05](docs/05_web_ui_fluid.md) §9-1 |
 | 폰 접속 실패 | `ERR_ADDRESS_UNREACHABLE` = 폰 **랜덤 MAC**(서버 문제 아님) | [issues/2026-07-26_01](docs/issues/2026-07-26_01_mobile_web_access_fails_random_mac.md) |
 | `cv2.CAP_PROP_BUFFERSIZE` | 드라이버가 무시한다. `FrameGrabber`(최신 프레임만 유지)로 해결됨 | [issues/2026-07-11_04](docs/issues/2026-07-11_04_camera_buffer_accumulation_causes_growing_latency.md) |
 | `adb push` | Git Bash는 경로를 변환해 조용히 실패 → **PowerShell로**. 디렉토리는 remote `rm -rf` 먼저(안 하면 `src/src/` 중첩) | [issues/2026-07-11_01](docs/issues/2026-07-11_01_adb_push_msys_path_mangling.md), [_02](docs/issues/2026-07-11_02_adb_push_directory_nests_when_remote_exists.md) |
@@ -299,7 +313,11 @@ FPS를 올리는 유일한 큰 레버는 **NPU/DSP 델리게이트**(Hexagon HTP
 
 ---
 
-## 10. 모델 / 라이센스
+## 10. 모델 / 제3자 자산
 
-- 추론 모델: **MoveNet Thunder INT8** (`movenet_thunder_int8.tflite`, ~6.8 MB) —
-  기존 pose 라인 자산 재사용. git에 미포함 (`scripts/copy_model.sh`로 복사).
+> 이 리포 자체의 라이센스는 **아직 정하지 않았다.** LICENSE 파일이 없는 동안에는
+> 저작권이 저자에게 유보된다(재배포·상업적 이용에 대한 허가 없음).
+
+- 추론 모델: **MoveNet Thunder INT8** (`models/movenet_thunder_int8.tflite`, 7.1 MB) —
+  기존 pose 라인 자산 재사용. **git에 포함되어 있어 clone하면 바로 쓸 수 있다**
+  (갱신할 때만 `scripts/copy_model.sh`).

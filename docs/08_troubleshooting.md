@@ -14,8 +14,8 @@
 | 서보 ID 전부 무응답 | 서보 외부전원 없음 | §4 |
 | 영상이 매끄러운데 지연이 크다 | 카메라 버퍼 누적 | §5 |
 | 코드를 밀었는데 반영이 안 된다 | adb push 중첩 / Git Bash 경로 변환 | §6 |
-| 웹을 고쳤는데 안 바뀐다 | `npm run build`가 Fluid를 덮음 | §6 |
-| `mock_serve.py`가 안 뜬다 | 삭제된 `PushupCounter` import — 코드 수정 필요 | [`07`](07_runbook.md) §7 |
+| 웹을 고쳤는데 안 바뀐다 | 고친 파일이 `web/app/index.html`이 맞는지 (배포본은 여기 하나) | §6 |
+| `mock_serve.py`가 안 뜬다 | 2026-09-09에 고쳐졌다. 그 전 버전이면 `PushupCounter` import 에러 | [`07`](07_runbook.md) §7 |
 | 콘솔에서 `UnicodeEncodeError` | cp949 콘솔 + em-dash·이모지 | §7 |
 | 경비 모드 "직접 촬영"이 씹힌다 | (해결됨) 자동 감지와 쿨다운 공유였음 | §8 |
 | 디스크가 찬다 | `captures/`에 사진이 계속 쌓임 — 자동 정리 없음 | §8 |
@@ -108,7 +108,7 @@ Bus 001 Device 004: ID 1a86:55d3 QinHeng Electronics USB Single Serial
 | **Git Bash로 adb push** | MSYS가 리모트 경로를 Windows 경로로 변환해 **조용히 실패**한다. **PowerShell로** → [`issues/2026-07-11_01`](issues/2026-07-11_01_adb_push_msys_path_mangling.md) |
 | **디렉토리 push 전 remote `rm -rf`** | remote 경로가 이미 있으면 `src/src/`·`dist/dist/`로 중첩된다. 구버전이 서빙돼 "반영 안 됨"으로 보임 → [`issues/2026-07-11_02`](issues/2026-07-11_02_adb_push_directory_nests_when_remote_exists.md) |
 | push 로그를 믿지 말 것 | `md5sum`으로 대조 |
-| **`npm run build`가 Fluid를 덮는다** | `/app`은 자체포함 정적 HTML이라 React 빌드 대상이 아니다 → [`05`](05_web_ui_fluid.md) §9-1 |
+| ~~**`npm run build`가 Fluid를 덮는다**~~ | **해소(2026-09-09)** — 배포본이 `web/app/`으로 분리됐고 서버가 `web/app` → `web/dist` 순으로 찾는다 → [`05`](05_web_ui_fluid.md) §9-1 |
 | **SSH 세션 안에서 PC 명령** | PowerShell 문법을 붙여넣으면 bash `syntax error`. 더 나쁜 건 `ssh`를 또 실행해 **자기 자신에게 재접속**하는 것. 프롬프트를 먼저 볼 것 |
 | **PowerShell 파이프로 `authorized_keys` 등록 금지** | PS 5.1이 CRLF/BOM을 섞어 키가 조용히 깨진다. 디바이스 셸에서 `echo '<pubkey>' >> ~/.ssh/authorized_keys` |
 | `pkill -f "http.server ..."` | 패턴이 **자기 셸까지 매칭**해 SSH 세션이 끊긴다(exit 255). PID로 kill하거나 bracket 트릭 |

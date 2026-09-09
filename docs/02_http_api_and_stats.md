@@ -208,18 +208,25 @@ _CONTROL_LOCK_MS = 60_000     # claim 후 60초
 ## 5. `/app` 정적 서빙
 
 ```
-/app/<rel>  →  web/dist/<rel>       (없으면 web/dist/index.html 폴백 = SPA)
+/app/<rel>  →  web/app/<rel>        (1순위 - 커밋된 배포본)
+            →  web/dist/<rel>       (2순위 - Vite 빌드 산출물, 있을 때만)
+            →  index.html 폴백 = SPA
 ```
 
+- **`web/app`이 먼저다.** 배포 UI(`web/app/index.html`)는 리포에 커밋되어 있으므로
+  clone 직후 빌드 없이 `/app`이 뜬다. `npm run build`가 `web/dist/index.html`을
+  stock React로 덮어써도 `/app`이 보여주는 화면은 바뀌지 않는다.
+- `web/dist`는 React 시안 자산(`/app/assets/*`)용 폴백으로만 남는다. 없어도 무방.
 - `resolve()` + `relative_to()`로 **경로 탈출을 차단**한다(위반 시 403).
-- `web/dist` 자체가 없으면 `503 {"error": "web_not_built", "hint": "cd web && npm install && npm run build"}`.
+- 둘 다 `index.html`이 없을 때만 `503 {"error": "web_not_built", ...}`.
 - `.html`은 `Cache-Control: no-store` → **컨테이너 재시작 없이** 파일만 갱신하면 반영된다.
 
 ## 6. 보안 모델 (한계를 분명히)
 
 - 위협 모델은 "관람객이 남이 조작 중인 PTZ를 실수로 건드림" 수준이다. 악의적 공격자를
   가정하지 않았다.
-- 조회·스트림은 무인증이고, PIN은 평문 하드코딩이며, 현재 데모 페이지 구성에서는
+- 조회·스트림은 무인증이고, PIN은 평문이며(기본 `1234` — `HCB_OPERATOR_PIN`
+  환경변수로 덮어쓴다), 현재 데모 페이지 구성에서는
   조작까지 사실상 무인증이다.
 - **기본 전제는 로컬 LAN 전용이다.** 시연 전 PIN 교체 권장.
 - **예외: Tailscale Funnel**(`README.md` §3.2)을 켜면 이 서버가 그대로 공개 인터넷에

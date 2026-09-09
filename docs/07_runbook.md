@@ -203,18 +203,20 @@ $APP = "/home/arduino/health_care_bot"
 ## 6. 웹 재배포
 
 ```bash
-tar -czf - -C web dist | ssh arduino@192.168.0.50 \
-  'cd ~/health_care_bot/web && rm -rf dist && tar -xzf -'
+# 배포본은 자체포함 단일 파일(48 KB)이라 이것 하나만 올리면 된다
+scp web/app/index.html arduino@192.168.0.50:~/health_care_bot/web/app/index.html
 ```
+
+디바이스를 git으로 관리한다면 `git pull`만으로도 반영된다 — 배포본이 커밋되기 때문이다.
 
 `http_server`가 매 요청마다 디스크에서 읽으므로 **컨테이너 재시작이 필요 없다.**
 
-> **`npm run build`는 현재 `/app`으로 서빙 중인 Fluid 페이지를 덮는다.**
-> [`05_web_ui_fluid.md`](05_web_ui_fluid.md) §9-1을 먼저 읽을 것.
+> **`npm run build`는 더 이상 `/app`을 덮지 않는다**(2026-09-09). 서버가
+> `web/app` → `web/dist` 순으로 찾기 때문이다. [`05_web_ui_fluid.md`](05_web_ui_fluid.md) §9-1.
 
 ## 7. 프론트만 따로 개발할 때
 
-**확정 UI인 Fluid는 빌드가 없다.** `web/dist/index.html` 한 파일을 고치는 것이 전부이고,
+**확정 UI인 Fluid는 빌드가 없다.** `web/app/index.html` 한 파일을 고치는 것이 전부이고,
 가장 빠른 확인 경로는 실기에 올려 브라우저를 새로고침하는 것이다(§6 — 컨테이너 재시작 불필요).
 
 로봇 없이 UI만 보려면 목업 백엔드를 쓴다. `mock_serve.py`는 `/app`도 같이 서빙하므로
@@ -224,10 +226,8 @@ tar -czf - -C web dist | ssh arduino@192.168.0.50 \
 python scripts/mock_serve.py     # http://localhost:8090/app  ← Fluid가 그대로 뜬다
 ```
 
-> ⚠️ **`scripts/mock_serve.py`는 현재 깨져 있다** — 2026-07-26에 삭제된 `PushupCounter`를
-> import해 실행 즉시 `ImportError: cannot import name 'PushupCounter'`가 난다.
-> 쓰려면 그 import와 사용처를 현재 카운터(`SquatCounter`/`OverheadPressCounter`/
-> `LateralRaiseCounter`)로 바꿔야 한다. (2026-09-08 확인)
+> `mock_serve.py`는 2026-07-26 pushup 제거 이후 `PushupCounter`를 import해 실행 즉시
+> `ImportError`가 났었다. **2026-09-09에 현재 카운터 3종으로 고쳤고 기동을 확인했다.**
 
 **보관된 React 계층**(`web/src/`)을 볼 때만 Vite를 쓴다. 이건 정상 작업 흐름이 아니다:
 
@@ -235,8 +235,8 @@ python scripts/mock_serve.py     # http://localhost:8090/app  ← Fluid가 그�
 cd web && VITE_BACKEND_URL=http://localhost:8090 npm run dev   # http://localhost:5173
 ```
 
-`npm run build`는 **절대 무심코 돌리지 말 것** — `web/dist/index.html`(= 확정 UI Fluid)을
-덮어쓴다. [`05_web_ui_fluid.md`](05_web_ui_fluid.md) §9-1.
+`npm run build`의 산출물은 `web/dist/`이고 `/app/assets/*`로만 노출된다. 확정 UI인
+`web/app/index.html`은 건드리지 않는다. [`05_web_ui_fluid.md`](05_web_ui_fluid.md) §9-1.
 
 ## 8. 원격 접속 — 같은 Wi-Fi가 아닐 때 (Tailscale Funnel)
 

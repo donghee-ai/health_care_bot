@@ -152,6 +152,11 @@ echo
 SERIAL_ARG=()
 [ -e "${SERIAL_DEV}" ] && SERIAL_ARG=(--serial "${SERIAL_DEV}")
 
+# 운영자 PIN - 지정하지 않으면 app_state.py의 기본값(1234)을 쓴다
+#   HCB_OPERATOR_PIN=8317 bash docker/run.sh
+PIN_ARG=()
+[ -n "${HCB_OPERATOR_PIN:-}" ] && PIN_ARG=(-e "HCB_OPERATOR_PIN=${HCB_OPERATOR_PIN}")
+
 exec docker run --rm "${TTY_ARGS[@]}" \
     --name "${CONTAINER_NAME}" \
     --hostname "${CONTAINER_NAME}" \
@@ -159,6 +164,7 @@ exec docker run --rm "${TTY_ARGS[@]}" \
     "${DEV_ARGS[@]}" \
     -v "${PROJECT_ROOT}:/work" \
     -w /work \
+    "${PIN_ARG[@]}" \
     "${IMAGE_FULL}" \
     python3 -u /work/src/main.py \
         /work/models/movenet_thunder_int8.tflite \
