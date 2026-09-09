@@ -8,8 +8,8 @@ Arduino UNO Q (Qualcomm Dragonwing QRB2210, Quad-core Cortex-A53 + STM32U585) �
 
 <table>
 <tr>
-<td colspan="2" align="center"><img src="docs/assets/robot.jpg" width="300" alt="짐벌 하우징 실물 — 헤드의 카메라와 육각 베이스"><br>
-<sub><b>짐벌 하우징 v8.43</b> · 헤드에 카메라, ST3215 2축(yaw·pitch) · UNO Q·허브·서보 어댑터가 베이스에</sub></td>
+<td colspan="2" align="center"><img src="docs/assets/robot.jpg" width="300" alt="짐벌 하우징 실물 — 카메라와 상하 모터가 든 헤드, 좌우 모터가 든 육각 베이스"><br>
+<sub><b>짐벌 하우징 v8.43</b> · <b>헤드</b>: 카메라 + 상하(pitch, ID=2) 모터 · <b>베이스</b>: 좌우(yaw, ID=1) 모터 + UNO Q·허브·서보 어댑터<br>두 모터는 한 버스에 데이지체인으로 물린다</sub></td>
 </tr>
 <tr>
 <td width="50%"><img src="docs/assets/squat-counting.gif" alt="스쿼트 카운팅"><br>
