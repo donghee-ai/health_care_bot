@@ -8,12 +8,24 @@ Arduino UNO Q (Qualcomm Dragonwing QRB2210, Quad-core Cortex-A53 + STM32U585) �
 
 <table>
 <tr>
-<td width="40%" valign="top"><img src="docs/assets/robot.jpg" alt="짐벌 하우징 실물 — 상단 카메라 헤드와 육각 베이스"></td>
-<td width="60%" valign="top"><img src="docs/assets/squat-counting.gif" alt="웹앱에서 스쿼트를 세는 화면 — 스켈레톤 오버레이와 카운터"></td>
+<td colspan="2" align="center"><img src="docs/assets/robot.jpg" width="300" alt="짐벌 하우징 실물 — 헤드의 카메라와 육각 베이스"><br>
+<sub><b>짐벌 하우징 v8.43</b> · 헤드에 카메라, ST3215 2축(yaw·pitch) · UNO Q·허브·서보 어댑터가 베이스에</sub></td>
 </tr>
 <tr>
-<td align="center"><sub><b>짐벌 하우징 v8.43</b><br>헤드에 카메라, ST3215 2축(yaw·pitch)<br>UNO Q·허브·서보 어댑터가 베이스에 들어간다</sub></td>
-<td align="center"><sub><b>스쿼트 카운팅 — <code>:8080/app</code></b><br>MoveNet 17 keypoint 오버레이 · 3렙(0→3) · 링은 목표 대비 진행률<br><b>배속 없는 실시간</b>이고, 화면의 9.7 FPS · 96 ms · 69 °C · CPU 84 %가 그때 실측값이다</sub></td>
+<td width="50%"><img src="docs/assets/squat-counting.gif" alt="스쿼트 카운팅"><br>
+<sub><b>스쿼트</b> — 무릎 각도 100°↔140° · 카운터 0→3</sub></td>
+<td width="50%"><img src="docs/assets/overhead-press.gif" alt="숄더프레스 카운팅"><br>
+<sub><b>숄더프레스</b> — 어깨 올림 각도 60°↔140° · 1→3</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/assets/lateral-raise.gif" alt="사이드 레터럴 레이즈 카운팅"><br>
+<sub><b>사이드 레터럴 레이즈</b> — 같은 각도 35°↔80° · 0→2</sub></td>
+<td width="50%"><img src="docs/assets/ptz-tracking.gif" alt="PTZ 자동 추적"><br>
+<sub><b>PTZ 자동 추적</b> — 사람을 따라 짐벌이 팬(배경이 바뀐다) · 프레임 이탈 후 재획득 · <code>EDGE</code>↔<code>IN_FRAME</code></sub></td>
+</tr>
+<tr>
+<td colspan="2"><sub>전부 <code>:8080/app</code> 화면녹화이고 <b>배속이 없다</b> — 30 fps 원본에서 4프레임마다 뽑아 7.5 fps로 재생하므로 실제 속도 그대로다.
+화면의 <b>9.7 FPS · 96 ms · 69 °C · CPU 84 %</b>가 그때 실측값이고, §9의 성능 표와 같은 값이다.</sub></td>
 </tr>
 </table>
 
