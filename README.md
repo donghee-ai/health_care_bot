@@ -35,9 +35,8 @@ Arduino UNO Q (Qualcomm Dragonwing QRB2210, Quad-core Cortex-A53 + STM32U585) �
 
 > **자매 리포** — 이 로봇이 쓰는 MoveNet Thunder INT8은
 > [`donghee-ai/unoq-edge-ai-lines`](https://github.com/donghee-ai/unoq-edge-ai-lines)에서 왔다.
-> 그쪽은 같은 UNO Q(QRB2210, NPU 없음)에서 **Vision · ASR · Pose · KWS 네 라인을 CPU만으로**
-> 돌린 PoC와 실측 기록이고, 이 리포는 그중 Pose 자산으로 만든 **제품 라인**이다.
-> (현재 private — 접근 권한이 없으면 404가 뜬다)
+> 그쪽은 같은 UNO Q(QRB2210, NPU 없음)에서 **Vision · Pose · ASR 세 라인을 CPU만으로**
+> 돌린 실측 기록이고, 이 리포는 그중 Pose 자산으로 만든 **제품 라인**이다.
 
 ---
 
@@ -235,7 +234,7 @@ health_care_bot/
 | — | [`docs/history/2026-09-09_01`](docs/history/2026-09-09_01_repo_clonability_fixed_deploy_ui_committed.md) | **가장 최신** — 배포 UI를 `web/app/`으로 커밋, Dockerfile CMD·mock_serve 수정 |
 | — | [`docs/history/2026-08-08_01_session_handoff.md`](docs/history/2026-08-08_01_session_handoff.md) | 실기 맥락 — 경비 모드, PTZ 버그 3건, Tailscale 원격접속 |
 | — | [`web/ARCHITECTURE.md`](web/ARCHITECTURE.md) · [`APP_GUIDE.md`](APP_GUIDE.md) | 웹앱 설계 근거 / React 시절 실행 가이드(일부 낡음) |
-| — | [`donghee-ai/unoq-edge-ai-lines`](https://github.com/donghee-ai/unoq-edge-ai-lines) | **자매 리포**(private) — Vision/ASR/Pose/KWS 4 라인 PoC + 실측. 본 라인의 모델 출처 |
+| — | [`donghee-ai/unoq-edge-ai-lines`](https://github.com/donghee-ai/unoq-edge-ai-lines) | **자매 리포** — Vision/Pose/ASR 3 라인 실측 기록. 본 라인의 모델 출처 |
 
 ---
 
