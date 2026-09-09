@@ -53,7 +53,7 @@ Homing_Offset 실측 이력 (참고 — **최신이 유효**):
 > 모델이 필요한데, 이건 서보 제조사가 자사 제품용으로 배포하는 도면이라 우리 리포에
 > 재배포할 성질이 아니다. **필요할 때 제조사/판매처 제품 페이지에서 직접 받아 로컬에서만
 > 쓴다.** `.gitignore`가 `*.step`을 막고 있으므로 실수로 커밋되지 않는다.
-> 참고: `3d_model/`의 STL·3MF·preview는 전부 `source/gen_stl_v8_43_complete.py`가 만드는
+> 참고: `3d_model/`의 STL·3MF·preview는 전부 `3d_model/source/gen_stl_v8_43_complete.py`가 만드는
 > 자체 산출물이라 STEP 없이도 빌드된다.
 
 ## 2. 왜 EEPROM 중앙 재정의를 쓰는가
