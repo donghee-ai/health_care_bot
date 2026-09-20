@@ -171,7 +171,7 @@ bash scripts/copy_model.sh    # ../unoq-companion-robot/pose/models/ -> models/
 
 ```
 health_care_bot/
-├── README.md                   (본 문서 — 진입점)
+├── README.md / README_KR.md    진입점 (영문 / 한국어 — 본 문서)
 ├── APP_GUIDE.md                React 시절 실행 가이드 (일부 낡음)
 ├── APP_PLAN.md                 초기 앱 기획서 (07-08, 데이터 계약의 출처)
 ├── health_care_bot_mvp_screen_plan.md   MVP 화면 기획 (07-11)
